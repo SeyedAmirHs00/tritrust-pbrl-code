@@ -1,0 +1,63 @@
+name: pebble-mujoco
+
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+
+# Prefer conda-forge over defaults so Pillow/libtiff stay ABI-compatible
+# (defaults Pillow links against libtiff.so.5; conda-forge libtiff provides .so.6).
+channel_priority: strict
+
+dependencies:
+  # Core Python
+  - python=3.8
+  - pip
+  - setuptools
+  - wheel
+  - cython<3
+
+  # Keep NumPy below 1.24 for compatibility with older RL/MuJoCo code
+  - numpy=1.23.5
+
+  # PyTorch equivalent of pytorch/pytorch:1.11.0-cuda11.3
+  - pytorch=1.11.0
+  - torchvision=0.12.0
+  - torchaudio=0.11.0
+  - cudatoolkit=11.3
+
+  # Scientific / visualization stack (keep Pillow/libtiff on conda-forge)
+  - pandas=1.5.3
+  - pillow
+  - libtiff
+  - matplotlib
+  - seaborn
+  - scipy
+  - scikit-image
+
+  # Native helpers that Conda can provide
+  - patchelf
+  - glew
+  - glfw
+
+  - pip:
+      # GUI
+      - PyQt5==5.14.2
+
+      # RL / MuJoCo
+      - mujoco==2.3.5
+      - gym==0.25.2
+      - dm-control==1.0.12
+      - git+https://github.com/denisyarats/dmc2gym.git
+
+      # Training / utilities
+      - tensorboard
+      - termcolor
+      - pybullet
+      - hydra-core==1.0.4
+      - transformers==4.32.0
+
+      # Human preference labeling / video
+      - imageio
+      - imageio-ffmpeg
+      - opencv-python-headless

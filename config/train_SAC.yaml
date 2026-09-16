@@ -1,0 +1,30 @@
+defaults:
+    - agent: sac
+
+#env
+env: metaworld_button-press-v2
+
+# Basic setup
+experiment: SAC
+device: cuda
+seed: 1
+
+# training 
+num_train_steps: 1e6
+replay_buffer_capacity: ${num_train_steps}
+num_seed_steps: 5000
+eval_frequency: 10000
+num_eval_episodes: 10
+
+# logger
+log_frequency: 10000
+log_save_tb: false
+
+# video recorder
+save_video: false
+save_model: true
+
+# hydra configuration
+hydra:
+    run:
+        dir: ./exp_sac/${env}/tests/seed${seed}

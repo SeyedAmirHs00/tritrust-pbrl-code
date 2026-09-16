@@ -1,0 +1,18 @@
+defaults:
+    - base_mixture
+    - agent: sac
+    
+# this needs to be specified manually
+experiment: RIME
+
+# RIME specific parameters
+threshold_beta_init: 2.0
+threshold_beta_min: 0.1
+threshold_variance: 'kl'
+threshold_alpha: 1.0
+least_reward_update: 5
+
+# hydra configuration
+hydra:
+    run:
+        dir: ./exp_rime_mixture/${env}/max_feedback${max_feedback}_feed_type${feed_type}_n${reward_batch}_l${segment}_g${teacher_gamma}_b${teacher_betas}_m${teacher_eps_mistake}_s${teacher_eps_skip}_e${teacher_eps_equal}/seed${seed}/

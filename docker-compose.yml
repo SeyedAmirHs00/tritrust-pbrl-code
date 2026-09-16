@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  mixture_pbrl:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: mixture_pbrl_container
+    runtime: nvidia   # Requires NVIDIA Container Toolkit
+    shm_size: '16gb'
+    environment:
+      - MUJOCO_GL=egl
+      - MUJOCO_VERSION=210
+      - MUJOCO_DIR=/root/.mujoco
+    volumes:
+      - .:/workspace   # Mount your local project
+    working_dir: /workspace
+    tty: true
+    stdin_open: true

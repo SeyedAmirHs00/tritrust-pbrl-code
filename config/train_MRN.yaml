@@ -1,0 +1,58 @@
+defaults:
+    - agent: sac_mrn
+    
+# this needs to be specified manually
+experiment: MRN
+
+# reward learning
+segment: 50
+activation: tanh
+num_seed_steps: 1000
+num_unsup_steps: 9000
+num_meta_steps: 5000
+num_interact: 5000
+reward_lr: 0.0003
+reward_batch: 25
+reward_update: 200
+feed_type: 1
+reset_update: 100
+topK: 5
+ensemble_size: 3
+max_feedback: 2000
+large_batch: 10
+label_margin: 0.0
+teacher_beta: -1
+teacher_gamma: 1
+teacher_eps_mistake: 0
+teacher_eps_skip: 0
+teacher_eps_equal: 0
+outer_weight: 0.1
+
+# scheduling
+reward_schedule: 0
+
+num_train_steps: 1e6
+replay_buffer_capacity: ${num_train_steps}
+
+# evaluation config
+eval_frequency: 10000
+num_eval_episodes: 10
+device: cuda
+
+# logger
+log_frequency: 10000
+log_save_tb: false
+
+# video recorder
+save_video: false
+
+# setups
+seed: 1
+
+# Environment
+env: metaworld_button-press-v2
+
+# hydra configuration
+hydra:
+    run:
+        dir: ./exp_pebble_mrn/${env}/seed${seed}/max_feedback${max_feedback}_n${reward_batch}_l${segment}_g${teacher_gamma}_b${teacher_beta}_m${teacher_eps_mistake}_s${teacher_eps_skip}_e${teacher_eps_equal}

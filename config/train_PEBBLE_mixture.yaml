@@ -1,0 +1,21 @@
+defaults:
+    - base_mixture
+    - agent: sac
+
+# this needs to be specified manually
+experiment: PEBBLE_mixture
+
+# Stabilized init: zero last Linear before first preference reward update.
+zero_last_layer: true
+
+# SGD on the mixture reward model (two param groups).
+reward_lr: 0.001
+alpha_lr: 0.005
+
+# Reward loss: two-path w_k (fig6): reward path weighted by detached w_k,
+# trust path unweighted with frozen reward deltas.
+
+# hydra configuration
+hydra:
+    run:
+        dir: ./exp_pebble_mixture/${env}/max_feedback${max_feedback}_feed_type${feed_type}_n${reward_batch}_l${segment}_g${teacher_gamma}_b${teacher_betas}_m${teacher_eps_mistake}_s${teacher_eps_skip}_e${teacher_eps_equal}/seed${seed}_${now:%Y-%m-%d_%H-%M-%S}/

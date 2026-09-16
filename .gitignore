@@ -1,0 +1,178 @@
+# ==============================================================================
+# Byte-compiled / optimized / C extensions
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ==============================================================================
+# Virtual Environments & Packaging
+# ==============================================================================
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+
+# Distribution / builds
+build/
+dist/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Metaworld build artifacts
+Metaworld-2.0.0/build/
+Metaworld-2.0.0/dist/
+Metaworld-2.0.0/metaworld.egg-info/
+
+# ==============================================================================
+# Testing, Coverage & Linters
+# ==============================================================================
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+.pyre/
+
+# ==============================================================================
+# Jupyter Notebooks & Editors / OS
+# ==============================================================================
+.ipynb_checkpoints/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ==============================================================================
+# Machine Learning Weights, Checkpoints & Serialization Data
+# ==============================================================================
+# Checkpoints & weights
+*.pth
+*.pt
+*.ckpt
+*.bin
+*.safetensors
+*.joblib
+
+# Large binary arrays & pickled objects
+*.npz
+*.npy
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+
+# Logs and terminal captures
+*.log
+*.out
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Experiment tracking & profiling
+runs/
+tb/
+wandb/
+.wandb/
+lightning_logs/
+
+# Raw rollout video captures and frame dumps
+/videos/
+/pngs/
+*.mp4
+*.avi
+*.mov
+
+# Large experiment metric tables
+*.csv
+*.tsv
+
+# ==============================================================================
+# Raw Experiment Output Dirs (Ignore runs, preserve figures & environment assets)
+# ==============================================================================
+workspace/
+other/
+synthesis/final_results/
+synthesis/_recover_tmp/
+
+# Ignore raw experiment run artifacts
+results/exp_*/
+results/synthetic_*/
+
+# Preserve paper figures, environment assets, and overview diagrams:
+!results/paper_figs/
+!results/paper_figs/**
+!results/environments/
+!results/environments/**
+!results/overall.png
+
+# ==============================================================================
+# LaTeX Build Artifacts (Keep source files .tex, .bib, .sty tracked)
+# ==============================================================================
+*.aux
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.toc
+*.nav
+*.snm
+*.vrb
+*.run.xml
+*.bcf
+_minted*/
+
+# Packaging scripts & paper bundles
+snippets.*
+gather_main_v2.py
+bundle_main_v2.py
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+*.7z
+*.rar
+*_bundle/
+before_main*/
+
+# Office documents (if any)
+*.docx
+*.doc
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+
+# ==============================================================================
+# Environment Variables & Docker Overrides
+# ==============================================================================
+.env
+.env.*
+!.env.example
+*.pid
+docker-compose.override.yml

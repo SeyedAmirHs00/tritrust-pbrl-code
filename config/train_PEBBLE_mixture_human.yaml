@@ -1,0 +1,72 @@
+defaults:
+    - agent: sac_human
+
+# this needs to be specified manually
+experiment: PEBBLE_mixture_zero_last_wk_sgd_human
+
+# Stabilized init: zero last Linear before first preference reward update.
+zero_last_layer: true
+
+# SGD on the mixture reward model (two param groups; same as wk_sgd).
+reward_lr: 0.001
+alpha_lr: 0.005
+
+# Optional human-video render size (DMC rgb_array).
+render_height: 256
+render_width: 256
+
+# reward learning
+segment: 50
+activation: tanh
+num_seed_steps: 1000
+num_unsup_steps: 9000
+num_interact: 20000
+reward_batch: 10
+reward_update: 50
+feed_type: 1
+reset_update: 100
+topK: 5
+ensemble_size: 3
+max_feedback: 100
+large_batch: 10
+label_margin: 0.0
+# Number of human experts = len(teacher_betas). Beta values are unused for
+# actual labels (humans provide them) but keep slots for mixture alphas.
+teacher_betas:
+  - 1
+  - 1
+  - 1
+  - -1
+teacher_gamma: 1
+teacher_eps_mistake: 0
+teacher_eps_skip: 0
+teacher_eps_equal: 0
+
+# scheduling
+reward_schedule: 0
+
+num_train_steps: 1e6
+replay_buffer_capacity: ${num_train_steps}
+
+# evaluation config
+eval_frequency: 10000
+num_eval_episodes: 10
+device: cuda
+
+# logger
+log_frequency: 10000
+log_save_tb: false
+
+# video recorder
+save_video: false
+
+# setups
+seed: 12345
+
+# Environment
+env: walker_walk
+
+# hydra configuration
+hydra:
+    run:
+        dir: ./exp_pebble_mixture_zero_last_wk_sgd_human/${env}/seed${seed}/max_feedback${max_feedback}_feed_type${feed_type}_n${reward_batch}_l${segment}_b${teacher_betas}
