@@ -114,6 +114,8 @@ lightning_logs/
 # ==============================================================================
 # Raw Experiment Output Dirs (Ignore runs, preserve figures & environment assets)
 # ==============================================================================
+results
+exp_*
 workspace/
 other/
 synthesis/final_results/

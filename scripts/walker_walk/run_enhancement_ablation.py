@@ -62,6 +62,14 @@ DEFAULT_SEEDS = [12345, 23451, 34512, 45123, 51234]
 DEFAULT_TEACHER_BETAS = [1, 1, 1, 0, -1]  # 3R1N1A
 
 
+def format_betas_arg(teacher_betas: Sequence[float]) -> str:
+    return "[" + ",".join(str(int(b)) if float(b).is_integer() else str(b) for b in teacher_betas) + "]"
+
+
+def format_betas_dir(teacher_betas: Sequence[float]) -> str:
+    return "[" + ", ".join(str(int(b)) if float(b).is_integer() else str(b) for b in teacher_betas) + "]"
+
+
 def build_cmd(
     seed: int,
     variant: AblationVariant,
@@ -71,7 +79,7 @@ def build_cmd(
     num_train_steps: int,
     device: str,
 ) -> List[str]:
-    betas = "[" + ",".join(str(b) for b in teacher_betas) + "]"
+    betas = format_betas_arg(teacher_betas)
     return [
         sys.executable,
         "train_PEBBLE_mixture_ablation.py",
@@ -99,6 +107,38 @@ def build_cmd(
         f"use_confidence_weight={str(variant.use_confidence_weight).lower()}",
         f"use_confidence_weight_in_alpha={str(variant.use_confidence_weight_in_alpha).lower()}",
     ]
+
+
+def is_run_completed(
+    variant: AblationVariant,
+    teacher_betas: Sequence[float],
+    max_feedback: int,
+    reward_batch: int,
+    seed: int,
+    num_train_steps: int,
+    root_dir: str = "exp_pebble_mixture_ablation",
+) -> bool:
+    v_dir = (
+        f"ablation_t{variant.use_tanh}_m{variant.use_max_norm}_"
+        f"w{variant.use_confidence_weight}_wa{variant.use_confidence_weight_in_alpha}"
+    )
+    b_str = format_betas_dir(teacher_betas)
+    fb_dir = (
+        f"max_feedback{max_feedback}_feed_type6_n{reward_batch}_l50_g1_"
+        f"b{b_str}_m0_s0_e0"
+    )
+    eval_csv = os.path.join(root_dir, "walker_walk", v_dir, fb_dir, f"seed{seed}", "test", "eval.csv")
+    if os.path.isfile(eval_csv) and os.path.getsize(eval_csv) > 100:
+        try:
+            with open(eval_csv, "r") as f:
+                lines = f.readlines()
+            if len(lines) > 2:
+                last_step = int(lines[-1].split(",")[0].strip())
+                if last_step >= num_train_steps - 10000:
+                    return True
+        except Exception:
+            pass
+    return False
 
 
 def run_one(cmd: List[str], dry_run: bool) -> bool:
@@ -139,9 +179,19 @@ def parse_args() -> argparse.Namespace:
         help="Subset of ablation variants to run",
     )
     parser.add_argument("--max-feedback", type=int, default=5000)
-    parser.add_argument("--reward-batch", type=int, default=100)
+    parser.add_argument(
+        "--reward-batch",
+        type=int,
+        default=None,
+        help="Reward batch size (default: auto derived from max-feedback)",
+    )
     parser.add_argument("--num-train-steps", type=int, default=500000)
     parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help="Skip runs that have already finished (evaluated near num_train_steps)",
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -151,16 +201,34 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    import datetime
+
     args = parse_args()
     name_to_variant = {v.name: v for v in ABLATION_VARIANTS}
     selected = [name_to_variant[name] for name in args.variants]
+
+    # Automatically derive reward_batch if not explicitly provided
+    if args.reward_batch is None:
+        if args.max_feedback == 3000:
+            reward_batch = 60
+        elif args.max_feedback == 5000:
+            reward_batch = 100
+        elif args.max_feedback == 1000:
+            reward_batch = 20
+        elif args.max_feedback == 500:
+            reward_batch = 10
+        else:
+            reward_batch = max(1, args.max_feedback // 50)
+    else:
+        reward_batch = args.reward_batch
 
     print("TriTrust-PBRL practical-enhancement ablation (Walker-Walk)")
     print(f"  seeds            : {args.seeds}")
     print(f"  teacher_betas    : {args.teacher_betas}")
     print(f"  max_feedback     : {args.max_feedback}")
-    print(f"  reward_batch     : {args.reward_batch}")
+    print(f"  reward_batch     : {reward_batch}")
     print(f"  num_train_steps  : {args.num_train_steps}")
+    print(f"  skip_existing    : {args.skip_existing}")
     print("  variants:")
     for v in selected:
         flags = (
@@ -172,21 +240,51 @@ def main() -> int:
         print(f"    - {v.name:14s} [{flags}]  ({v.note})")
 
     failures = []
+    total_runs = len(selected) * len(args.seeds)
+    run_idx = 0
+    start_all = datetime.datetime.now()
+
     for variant in selected:
         for seed in args.seeds:
+            run_idx += 1
+            if args.skip_existing and is_run_completed(
+                variant=variant,
+                teacher_betas=list(args.teacher_betas),
+                max_feedback=args.max_feedback,
+                reward_batch=reward_batch,
+                seed=seed,
+                num_train_steps=args.num_train_steps,
+            ):
+                print(
+                    f"\n[{run_idx}/{total_runs}] Skipping completed run: "
+                    f"variant={variant.name}, seed={seed}"
+                )
+                continue
+
             cmd = build_cmd(
                 seed=seed,
                 variant=variant,
                 teacher_betas=list(args.teacher_betas),
                 max_feedback=args.max_feedback,
-                reward_batch=args.reward_batch,
+                reward_batch=reward_batch,
                 num_train_steps=args.num_train_steps,
                 device=args.device,
             )
+            run_start = datetime.datetime.now()
+            print(
+                f"\n>>> [{run_idx}/{total_runs}] Starting variant={variant.name}, "
+                f"seed={seed} at {run_start.strftime('%Y-%m-%d %H:%M:%S')}"
+            )
             ok = run_one(cmd, dry_run=args.dry_run)
+            run_elapsed = datetime.datetime.now() - run_start
             if not ok:
                 failures.append((variant.name, seed))
-                print(f"[FAILED] variant={variant.name} seed={seed}")
+                print(f"[FAILED] variant={variant.name} seed={seed} (elapsed: {run_elapsed})")
+            else:
+                print(f"[DONE] variant={variant.name} seed={seed} (elapsed: {run_elapsed})")
+
+    total_elapsed = datetime.datetime.now() - start_all
+    print(f"\nQueue finished in {total_elapsed}.")
 
     if failures:
         print("\nFailed runs:")
@@ -200,3 +298,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
