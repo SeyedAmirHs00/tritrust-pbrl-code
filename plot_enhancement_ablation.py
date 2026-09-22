@@ -141,20 +141,20 @@ VARIANT_META: Dict[Tuple[bool, bool, bool, bool], VariantMeta] = {
     (True, True, False, True): VariantMeta(
         "tTrue_mTrue_wFalse_waTrue", "+Tanh, +Max-norm", "+Tanh+Max", "#F58518", "-", 2, True, True, False, True
     ),
-    (True, True, True, True): VariantMeta(
-        "tTrue_mTrue_wTrue_waTrue", "Full TTP", "Full TTP", "#E45756", "-", 3, True, True, True, True
-    ),
     (True, True, True, False): VariantMeta(
-        "tTrue_mTrue_wTrue_waFalse",
-        "w_k reward-only",
-        "w_k rew",
+        "tTrue_mTrue_wTrue_waFalse", "Full TTP", "Full TTP", "#E45756", "-", 3, True, True, True, False
+    ),
+    (True, True, True, True): VariantMeta(
+        "tTrue_mTrue_wTrue_waTrue",
+        "Attached w_k",
+        "Att w_k",
         "#FF9DA6",
         ":",
-        3,
+        4,
         True,
         True,
         True,
-        False,
+        True,
     ),
     (True, False, True, True): VariantMeta(
         "tTrue_mFalse_wTrue_waTrue", "w/o Max-norm", "w/o Max", "#54A24B", "-.", 4, True, False, True, True
@@ -1128,11 +1128,11 @@ def matched_w_pairs(
         key = (m.use_tanh, m.use_max_norm)
         slot = by_backbone.setdefault(key, {})
         if m.use_confidence_weight:
-            # Prefer full TTP (w_k also in alpha loss) over reward-only.
+            # Prefer full TTP (detached w_k) over attached.
             existing = slot.get(True)
             if existing is None or (
-                m.use_confidence_weight_in_alpha
-                and not existing.use_confidence_weight_in_alpha
+                not m.use_confidence_weight_in_alpha
+                and existing.use_confidence_weight_in_alpha
             ):
                 slot[True] = m
         else:

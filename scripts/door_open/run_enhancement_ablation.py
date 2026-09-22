@@ -37,27 +37,27 @@ class AblationVariant:
     use_tanh: bool
     use_max_norm: bool
     use_confidence_weight: bool
-    use_confidence_weight_in_alpha: bool = True
+    use_confidence_weight_in_alpha: bool = False
     note: str = ""
 
 
 # Matches Table enhancement-ablation / walker_walk ablation variants,
-# plus wk_reward_only (w_k scales reward CE but is detached from alpha grads).
+# plus attached_wk (w_k in alpha grads).
 ABLATION_VARIANTS: Sequence[AblationVariant] = (
-    AblationVariant("raw", False, False, False, note="no enhancements"),
-    AblationVariant("tanh", True, False, False, note="+Tanh"),
-    AblationVariant("tanh_maxn", True, True, False, note="+Tanh,+Max-norm / w/o w_k"),
-    AblationVariant("full_ttp", True, True, True, note="Full TTP"),
+    AblationVariant("raw", False, False, False, True, note="no enhancements"),
+    AblationVariant("tanh", True, False, False, True, note="+Tanh"),
+    AblationVariant("tanh_maxn", True, True, False, True, note="+Tanh,+Max-norm / w/o w_k"),
+    AblationVariant("full_ttp", True, True, True, False, note="Full TTP (detached w_k)"),
     AblationVariant(
-        "wk_reward_only",
+        "attached_wk",
         True,
         True,
         True,
-        False,
-        note="w_k in reward loss only (detached from alpha)",
+        True,
+        note="Attached w_k (w_k in alpha grads)",
     ),
-    AblationVariant("wo_maxn", True, False, True, note="w/o Max-norm"),
-    AblationVariant("wo_tanh", False, True, True, note="w/o Tanh"),
+    AblationVariant("wo_maxn", True, False, True, False, note="w/o Max-norm"),
+    AblationVariant("wo_tanh", False, True, True, False, note="w/o Tanh"),
 )
 
 DEFAULT_SEEDS = [12345, 23451, 34512, 45123, 51234]

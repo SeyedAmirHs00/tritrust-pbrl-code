@@ -35,27 +35,27 @@ class AblationVariant:
     use_tanh: bool
     use_max_norm: bool
     use_confidence_weight: bool
-    use_confidence_weight_in_alpha: bool = True
+    use_confidence_weight_in_alpha: bool = False
     note: str = ""
 
 
 # Matches Table enhancement-ablation in main_v2.tex (unique rows), plus
-# wk_reward_only (w_k scales reward CE but is detached from alpha grads).
+# attached_wk (w_k scales reward CE and flows into alpha grads).
 ABLATION_VARIANTS: Sequence[AblationVariant] = (
-    AblationVariant("raw", False, False, False, note="no enhancements"),
-    AblationVariant("tanh", True, False, False, note="+Tanh"),
-    AblationVariant("tanh_maxn", True, True, False, note="+Tanh,+Max-norm / w/o w_k"),
-    AblationVariant("full_ttp", True, True, True, note="Full TTP"),
+    AblationVariant("raw", False, False, False, True, note="no enhancements"),
+    AblationVariant("tanh", True, False, False, True, note="+Tanh"),
+    AblationVariant("tanh_maxn", True, True, False, True, note="+Tanh,+Max-norm / w/o w_k"),
+    AblationVariant("full_ttp", True, True, True, False, note="Full TTP (detached w_k)"),
     AblationVariant(
-        "wk_reward_only",
+        "attached_wk",
         True,
         True,
         True,
-        False,
-        note="w_k in reward loss only (detached from alpha)",
+        True,
+        note="Attached w_k (w_k in alpha grads)",
     ),
-    AblationVariant("wo_maxn", True, False, True, note="w/o Max-norm"),
-    AblationVariant("wo_tanh", False, True, True, note="w/o Tanh"),
+    AblationVariant("wo_maxn", True, False, True, False, note="w/o Max-norm"),
+    AblationVariant("wo_tanh", False, True, True, False, note="w/o Tanh"),
 )
 
 DEFAULT_SEEDS = [12345, 23451, 34512, 45123, 51234]
@@ -118,26 +118,36 @@ def is_run_completed(
     num_train_steps: int,
     root_dir: str = "exp_pebble_mixture_ablation",
 ) -> bool:
-    v_dir = (
-        f"ablation_t{variant.use_tanh}_m{variant.use_max_norm}_"
-        f"w{variant.use_confidence_weight}_wa{variant.use_confidence_weight_in_alpha}"
-    )
     b_str = format_betas_dir(teacher_betas)
     fb_dir = (
         f"max_feedback{max_feedback}_feed_type6_n{reward_batch}_l50_g1_"
         f"b{b_str}_m0_s0_e0"
     )
-    eval_csv = os.path.join(root_dir, "walker_walk", v_dir, fb_dir, f"seed{seed}", "test", "eval.csv")
-    if os.path.isfile(eval_csv) and os.path.getsize(eval_csv) > 100:
-        try:
-            with open(eval_csv, "r") as f:
-                lines = f.readlines()
-            if len(lines) > 2:
-                last_step = int(lines[-1].split(",")[0].strip())
-                if last_step >= num_train_steps - 10000:
-                    return True
-        except Exception:
-            pass
+    v_dirs = [
+        f"ablation_t{variant.use_tanh}_m{variant.use_max_norm}_"
+        f"w{variant.use_confidence_weight}_wa{variant.use_confidence_weight_in_alpha}"
+    ]
+    if not variant.use_confidence_weight:
+        alt_wa = not variant.use_confidence_weight_in_alpha
+        v_dirs.append(
+            f"ablation_t{variant.use_tanh}_m{variant.use_max_norm}_"
+            f"w{variant.use_confidence_weight}_wa{alt_wa}"
+        )
+
+    for v_dir in v_dirs:
+        eval_csv = os.path.join(root_dir, "walker_walk", v_dir, fb_dir, f"seed{seed}", "test", "eval.csv")
+        if os.path.isfile(eval_csv) and os.path.getsize(eval_csv) > 100:
+            try:
+                with open(eval_csv, "r") as f:
+                    lines = f.readlines()
+                if len(lines) > 2:
+                    header = [c.strip() for c in lines[0].split(",")]
+                    step_idx = header.index("step") if "step" in header else 0
+                    last_step = int(float(lines[-1].split(",")[step_idx].strip()))
+                    if last_step >= num_train_steps - 10000:
+                        return True
+            except Exception:
+                pass
     return False
 
 

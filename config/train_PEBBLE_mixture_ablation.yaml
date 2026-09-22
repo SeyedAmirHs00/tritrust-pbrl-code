@@ -10,7 +10,7 @@ use_tanh: true
 use_max_norm: true
 use_confidence_weight: true
 # If false, w_k still weights reward CE but is detached from alpha gradients.
-use_confidence_weight_in_alpha: true
+use_confidence_weight_in_alpha: false
 
 # hydra configuration
 hydra:
