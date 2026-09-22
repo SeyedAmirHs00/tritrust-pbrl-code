@@ -178,3 +178,5 @@ before_main*/
 !.env.example
 *.pid
 docker-compose.override.yml
+
+*.tex
