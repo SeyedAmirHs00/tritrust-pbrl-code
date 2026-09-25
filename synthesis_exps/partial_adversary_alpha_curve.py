@@ -25,16 +25,25 @@ from partial_adversary_alpha_curve_plot import write_alpha_curve_figures
 from synthetic_shared_core import DEFAULT_COEF_MAX_DELTA
 
 
-def _default_out_dir(*, use_wk: bool, optimizer: str, reward_model: str) -> str:
+def _default_data_dir(*, use_wk: bool, optimizer: str, reward_model: str) -> str:
     suffix_wk = "_wk" if use_wk else ""
     suffix_opt = "" if optimizer == "sgd" else f"_{optimizer}"
     suffix_model = "_mlp" if reward_model == "mlp" else ""
-    return f"results/synthetic_partial_adversary_alpha_curve{suffix_wk}{suffix_opt}{suffix_model}"
+    return f"exp_synthesis/synthetic_partial_adversary_alpha_curve{suffix_wk}{suffix_opt}{suffix_model}"
+
+
+def _default_plot_dir(*, use_wk: bool, optimizer: str, reward_model: str) -> str:
+    suffix_wk = "_wk" if use_wk else ""
+    suffix_opt = "" if optimizer == "sgd" else f"_{optimizer}"
+    suffix_model = "_mlp" if reward_model == "mlp" else ""
+    return f"result/synthetic_partial_adversary_alpha_curve{suffix_wk}{suffix_opt}{suffix_model}"
 
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Partial-adversary α curves")
-    p.add_argument("--out_dir", default=None, help="Default depends on --use-wk / optimizer / model.")
+    p.add_argument("--data_dir", default=None, help="Directory for CSV data (default depends on --use-wk / optimizer / model).")
+    p.add_argument("--plot_dir", default=None, help="Directory for plots (default depends on --use-wk / optimizer / model).")
+    p.add_argument("--out_dir", dest="data_dir", help="Alias for --data_dir")
     p.add_argument("--seeds", type=int, default=200)
     p.add_argument("--steps", type=int, default=400)
     p.add_argument("--log_every", type=int, default=1)
@@ -84,12 +93,16 @@ def main() -> None:
     p.add_argument("--plot-per-seed", action="store_true")
     args = p.parse_args()
 
-    if args.out_dir is None:
-        args.out_dir = _default_out_dir(
+    if args.data_dir is None:
+        args.data_dir = _default_data_dir(
+            use_wk=args.use_wk, optimizer=args.optimizer, reward_model=args.reward_model
+        )
+    if args.plot_dir is None:
+        args.plot_dir = _default_plot_dir(
             use_wk=args.use_wk, optimizer=args.optimizer, reward_model=args.reward_model
         )
 
-    hist_path = os.path.join(args.out_dir, HIST_CSV_NAME)
+    hist_path = os.path.join(args.data_dir, HIST_CSV_NAME)
 
     if args.replot:
         if not os.path.isfile(hist_path):
@@ -97,19 +110,19 @@ def main() -> None:
         hist_df = pd.read_csv(hist_path)
         write_alpha_curve_figures(
             hist_df,
-            args.out_dir,
+            args.plot_dir,
             ci=args.plot_ci,
             per_experiment=True,
             per_seed=args.plot_per_seed,
         )
-        print(f"replot OK: {args.out_dir}")
+        print(f"replot OK: {args.plot_dir}")
         return
 
-    if os.path.exists(args.out_dir):
+    if os.path.exists(args.data_dir):
         if not args.overwrite:
-            raise FileExistsError(f"{args.out_dir} exists; pass --overwrite to replace it")
-        shutil.rmtree(args.out_dir)
-    os.makedirs(args.out_dir)
+            raise FileExistsError(f"{args.data_dir} exists; pass --overwrite to replace it")
+        shutil.rmtree(args.data_dir)
+    os.makedirs(args.data_dir)
 
     lr_model, lr_alpha = resolve_lrs(args.optimizer, args.lr_model, args.lr_alpha)
     hist_df, summary_df = run_alpha_curve_experiment(
@@ -127,15 +140,15 @@ def main() -> None:
         coef_max_delta=args.coef_max_delta,
     )
     hist_df.to_csv(hist_path, index=False)
-    summary_df.to_csv(os.path.join(args.out_dir, SUMMARY_CSV_NAME), index=False)
+    summary_df.to_csv(os.path.join(args.data_dir, SUMMARY_CSV_NAME), index=False)
     write_alpha_curve_figures(
         hist_df,
-        args.out_dir,
+        args.plot_dir,
         ci=args.plot_ci,
         per_experiment=True,
         per_seed=args.plot_per_seed,
     )
-    print(f"OUT: {args.out_dir}")
+    print(f"OUT: data={args.data_dir}, plot={args.plot_dir}")
 
 
 if __name__ == "__main__":

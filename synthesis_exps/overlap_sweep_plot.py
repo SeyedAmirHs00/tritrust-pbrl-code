@@ -15,7 +15,14 @@ import pandas as pd
 from plot_utils import savefig_png_pdf
 
 
-def plot_overlap_figure(table: pd.DataFrame, out_dir: str) -> None:
+DEFAULT_DATA_DIR = "exp_synthesis/synthetic_overlap_sweep"
+DEFAULT_PLOT_DIR = "result/synthetic_overlap_sweep"
+
+
+def plot_overlap_figure(
+    table: pd.DataFrame,
+    plot_dir: str = DEFAULT_PLOT_DIR,
+) -> None:
     colors = {"ttp": "#4c72b0", "no_alpha": "#dd8452", "ds_sym": "#55a868"}
     labels = {"ttp": "TTP", "no_alpha": r"No-$\alpha$", "ds_sym": "DS-Sym"}
     methods = ("ttp", "no_alpha", "ds_sym")
@@ -54,7 +61,7 @@ def plot_overlap_figure(table: pd.DataFrame, out_dir: str) -> None:
     fig.tight_layout()
     savefig_png_pdf(
         fig,
-        os.path.join(out_dir, "3R1A_overlap_global_vs_local.png"),
+        os.path.join(plot_dir, "3R1A_overlap_global_vs_local.png"),
         dpi=200,
         bbox_inches="tight",
     )
@@ -63,11 +70,25 @@ def plot_overlap_figure(table: pd.DataFrame, out_dir: str) -> None:
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Plot overlap sweep figure")
-    p.add_argument("--out_dir", default="results/synthetic_overlap_sweep")
+    p.add_argument(
+        "--data_dir",
+        "--data-dir",
+        dest="data_dir",
+        default=DEFAULT_DATA_DIR,
+        help="Directory containing overlap_shared.csv",
+    )
+    p.add_argument(
+        "--plot_dir",
+        "--plot-dir",
+        dest="plot_dir",
+        default=DEFAULT_PLOT_DIR,
+        help="Directory to save plots",
+    )
+    p.add_argument("--out_dir", dest="data_dir", help="Alias for --data_dir")
     args = p.parse_args()
-    table = pd.read_csv(os.path.join(args.out_dir, "overlap_shared.csv"))
-    plot_overlap_figure(table, args.out_dir)
-    print(f"OUT overlap plot: {args.out_dir}")
+    table = pd.read_csv(os.path.join(args.data_dir, "overlap_shared.csv"))
+    plot_overlap_figure(table, plot_dir=args.plot_dir)
+    print(f"OUT overlap plot: {args.plot_dir}")
 
 
 if __name__ == "__main__":

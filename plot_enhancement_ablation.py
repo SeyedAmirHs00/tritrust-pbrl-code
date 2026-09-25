@@ -456,7 +456,7 @@ def plot_diagnostics_curves(
     handles, labels = axes_flat[0].get_legend_handles_labels()
     if handles:
         fig.legend(handles, labels, loc="upper center", ncol=min(4, len(labels)), frameon=False)
-    fig.suptitle(title, y=1.02)
+    # fig.suptitle(title, y=1.02)
     fig.tight_layout()
     fig.savefig(out_path, bbox_inches="tight")
     fig.savefig(out_path.replace(".png", ".pdf"), bbox_inches="tight")
@@ -503,7 +503,7 @@ def plot_diagnostics_metric_bars(
     )
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=20, ha="right")
-    ax.set_title(title)
+    # ax.set_title(title)
     ax.set_ylabel("Value")
     y_top = max(means[i] + sems[i] for i in range(len(means)))
     for i, (mu, se) in enumerate(zip(means, sems)):
@@ -578,7 +578,7 @@ def plot_diagnostics_panels(
     for ax in axes_flat[len(groups) :]:
         ax.axis("off")
 
-    fig.suptitle(f"Reward-buffer diagnostics — {env_label}", y=1.02)
+    # fig.suptitle(f"Reward-buffer diagnostics — {env_label}", y=1.02)
     fig.tight_layout()
     fig.savefig(out_path, bbox_inches="tight")
     fig.savefig(out_path.replace(".png", ".pdf"), bbox_inches="tight")
@@ -640,7 +640,7 @@ def plot_diagnostics_cross_env(
 
     ax.set_xticks(x)
     ax.set_xticklabels(envs, rotation=15, ha="right")
-    ax.set_title(title)
+    # ax.set_title(title)
     ax.legend(frameon=False, fontsize=9)
     fig.tight_layout()
     fig.savefig(out_path, bbox_inches="tight")
@@ -669,7 +669,7 @@ def plot_diagnostics_eval_curve(
     ax.fill_between(x, mean - band, mean + band, color="#E45756", alpha=0.18, linewidth=0)
     ax.set_xlabel("Environment steps")
     ax.set_ylabel(_pretty_metric(metric))
-    ax.set_title(title)
+    # ax.set_title(title)
     ax.legend(frameon=False, loc="lower right")
     ax.ticklabel_format(axis="x", style="sci", scilimits=(0, 0))
     fig.tight_layout()
@@ -843,7 +843,7 @@ def plot_learning_curves(
 
     ax.set_xlabel(xlabel)
     ax.set_ylabel(_pretty_metric(metric))
-    ax.set_title(title)
+    # ax.set_title(title)
     ax.legend(frameon=False, loc="lower right")
     # Compact scientific x ticks for large step counts.
     ax.ticklabel_format(axis="x", style="sci", scilimits=(0, 0))
@@ -893,7 +893,7 @@ def plot_final_bars(
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=20, ha="right")
     ax.set_ylabel(_pretty_metric(metric))
-    ax.set_title(title)
+    # ax.set_title(title)
     # Annotate mean values.
     y_max = max(means[i] + sems[i] for i in range(len(means)))
     for i, (mu, se) in enumerate(zip(means, sems)):
@@ -967,7 +967,7 @@ def plot_alpha_abs_sum(
         )
     ax.set_xlabel("Environment steps")
     ax.set_ylabel(r"$|\alpha|_1$ (alpha_abs_sum)")
-    ax.set_title(title)
+    # ax.set_title(title)
     ax.legend(frameon=False, loc="best")
     ax.ticklabel_format(axis="x", style="sci", scilimits=(0, 0))
     fig.tight_layout()
@@ -1021,7 +1021,7 @@ def _plot_multichannel_panels(
     fig.legend(
         handles, labels, loc="upper center", ncol=min(n_channels, 6), frameon=False
     )
-    fig.suptitle(title, y=1.02)
+    # fig.suptitle(title, y=1.02)
     fig.tight_layout()
     fig.savefig(out_path, bbox_inches="tight")
     fig.savefig(out_path.replace(".png", ".pdf"), bbox_inches="tight")
@@ -1181,7 +1181,7 @@ def plot_w_comparison(
         ax.ticklabel_format(axis="x", style="sci", scilimits=(0, 0))
         ax.legend(frameon=False, fontsize=8, loc="lower right")
     axes_list[0].set_ylabel(_pretty_metric(metric))
-    fig.suptitle(f"Confidence weight w_k — with vs without ({env})", y=1.02)
+    # fig.suptitle(f"Confidence weight w_k — with vs without ({env})", y=1.02)
     fig.tight_layout()
     curve_path = os.path.join(out_dir, f"w_comparison_curves_{metric}.png")
     fig.savefig(curve_path, bbox_inches="tight")
@@ -1248,7 +1248,7 @@ def plot_w_comparison(
     ax.set_xticks(x)
     ax.set_xticklabels([b for b, _, _ in pairs])
     ax.set_ylabel(_pretty_metric(metric))
-    ax.set_title(f"Final return: with vs without w_k (last {last_n} evals)")
+    # ax.set_title(f"Final return: with vs without w_k (last {last_n} evals)")
     ax.legend(frameon=False, loc="lower right")
     y_top = max(
         max(means_wo[i] + sems_wo[i], means_w[i] + sems_w[i]) for i in range(len(pairs))
@@ -1298,7 +1298,7 @@ def plot_w_comparison(
     ax.set_xticks(x)
     ax.set_xticklabels([b for b, _, _ in pairs])
     ax.set_ylabel(f"Δ {_pretty_metric(metric)} (with − without w_k)")
-    ax.set_title("Effect of confidence weight w_k")
+    # ax.set_title("Effect of confidence weight w_k")
     offset = 0.03 * (max(abs(d) for d in deltas) or 1.0)
     for i, d in enumerate(deltas):
         ax.text(

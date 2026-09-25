@@ -289,7 +289,7 @@ def run_overlap_data(
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--out_dir", default="results/synthetic_overlap_sweep")
+    p.add_argument("--data_dir", "--out_dir", dest="data_dir", default="exp_synthesis/synthetic_overlap_sweep", help="Directory to save CSV data")
     p.add_argument("--seeds", type=int, default=120)
     p.add_argument("--steps", type=int, default=400)
     p.add_argument("--overwrite", action="store_true")
@@ -302,7 +302,7 @@ def main() -> None:
     args = p.parse_args()
 
     run_overlap_data(
-        args.out_dir,
+        args.data_dir,
         args.seeds,
         args.steps,
         args.overwrite,

@@ -840,10 +840,18 @@ def parse_args() -> argparse.Namespace:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument(
+        "--data_dir",
         "--out_dir",
+        dest="data_dir",
         default=None,
         help="Directory for CSV outputs "
-        "(default: results/synthetic_partial_adversary_alpha_curve[_wk][_opt][_mlp]).",
+        "(default: exp_synthesis/synthetic_partial_adversary_alpha_curve[_wk][_opt][_mlp]).",
+    )
+    p.add_argument(
+        "--plot_dir",
+        default=None,
+        help="Directory for plot outputs with --plot "
+        "(default: result/synthetic_partial_adversary_alpha_curve[_wk][_opt][_mlp]).",
     )
     p.add_argument("--seeds", type=int, default=200, help="Number of MC seeds (batch size).")
     p.add_argument("--steps", type=int, default=400)
@@ -941,21 +949,26 @@ def main() -> int:
     methods = resolve_methods(args.methods)
     lr_model, lr_alpha = resolve_lrs(args.optimizer, args.lr_model, args.lr_alpha)
 
-    if args.out_dir is None:
-        suffix_wk = "_wk" if args.use_wk else ""
-        suffix_opt = "" if args.optimizer == "sgd" else f"_{args.optimizer}"
-        suffix_model = "_mlp" if args.reward_model == "mlp" else ""
-        args.out_dir = (
-            f"results/synthetic_partial_adversary_alpha_curve{suffix_wk}{suffix_opt}{suffix_model}"
+    suffix_wk = "_wk" if args.use_wk else ""
+    suffix_opt = "" if args.optimizer == "sgd" else f"_{args.optimizer}"
+    suffix_model = "_mlp" if args.reward_model == "mlp" else ""
+
+    if args.data_dir is None:
+        args.data_dir = (
+            f"exp_synthesis/synthetic_partial_adversary_alpha_curve{suffix_wk}{suffix_opt}{suffix_model}"
+        )
+    if args.plot_dir is None:
+        args.plot_dir = (
+            f"result/synthetic_partial_adversary_alpha_curve{suffix_wk}{suffix_opt}{suffix_model}"
         )
 
-    if os.path.exists(args.out_dir):
+    if os.path.exists(args.data_dir):
         if not args.overwrite:
             raise FileExistsError(
-                f"{args.out_dir} exists; pass --overwrite to replace it"
+                f"{args.data_dir} exists; pass --overwrite to replace it"
             )
-        shutil.rmtree(args.out_dir)
-    os.makedirs(args.out_dir)
+        shutil.rmtree(args.data_dir)
+    os.makedirs(args.data_dir)
 
     hist_df, summary_df = run_alpha_curve_experiment(
         methods=methods,
@@ -973,26 +986,26 @@ def main() -> int:
         coef_max_delta=args.coef_max_delta,
     )
 
-    hist_path = os.path.join(args.out_dir, HIST_CSV_NAME)
-    summary_path = os.path.join(args.out_dir, SUMMARY_CSV_NAME)
+    hist_path = os.path.join(args.data_dir, HIST_CSV_NAME)
+    summary_path = os.path.join(args.data_dir, SUMMARY_CSV_NAME)
     hist_df.to_csv(hist_path, index=False)
     summary_df.to_csv(summary_path, index=False)
     print(f"Saved {hist_path}")
     print(f"Saved {summary_path}")
-    print(f"OUT: {args.out_dir}")
+    print(f"OUT: {args.data_dir}")
 
     if args.plot:
-        print(f"Plotting figures → {args.out_dir} (ci={args.plot_ci})")
+        print(f"Plotting figures → {args.plot_dir} (ci={args.plot_ci})")
         write_alpha_curve_figures(
             hist_df,
-            args.out_dir,
+            args.plot_dir,
             ci=args.plot_ci,
             per_experiment=args.plot_per_experiment,
             per_seed=args.plot_per_seed,
         )
     else:
         print(
-            f"  plot with: python partial_adversary_alpha_curve_plot.py --run_dir {args.out_dir}"
+            f"  plot with: python partial_adversary_alpha_curve_plot.py --data_dir {args.data_dir} --plot_dir {args.plot_dir}"
         )
     return 0
 

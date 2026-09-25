@@ -15,7 +15,17 @@ import pandas as pd
 from plot_utils import savefig_png_pdf
 
 
-def plot_partial_adversary_figures(table: pd.DataFrame, out_dir: str, settings_order: list[str]) -> None:
+DEFAULT_DATA_DIR = "exp_synthesis/synthetic_partial_adversary"
+DEFAULT_PLOT_DIR = "result/synthetic_partial_adversary"
+
+
+def plot_partial_adversary_figures(
+    table: pd.DataFrame,
+    plot_dir: str = DEFAULT_PLOT_DIR,
+    settings_order: list[str] | None = None,
+) -> None:
+    if settings_order is None:
+        settings_order = list(dict.fromkeys(table["setting"].tolist()))
     methods = [("stabilized", {}), ("standard", {})]
     x = np.arange(len(settings_order))
     width = 0.35
@@ -36,7 +46,7 @@ def plot_partial_adversary_figures(table: pd.DataFrame, out_dir: str, settings_o
     fig.tight_layout()
     savefig_png_pdf(
         fig,
-        os.path.join(out_dir, "partial_adversary_correct_branch.png"),
+        os.path.join(plot_dir, "partial_adversary_correct_branch.png"),
         dpi=200,
         bbox_inches="tight",
     )
@@ -62,7 +72,7 @@ def plot_partial_adversary_figures(table: pd.DataFrame, out_dir: str, settings_o
     fig.tight_layout()
     savefig_png_pdf(
         fig,
-        os.path.join(out_dir, "partial_adversary_recovered_trust.png"),
+        os.path.join(plot_dir, "partial_adversary_recovered_trust.png"),
         dpi=200,
         bbox_inches="tight",
     )
@@ -71,12 +81,26 @@ def plot_partial_adversary_figures(table: pd.DataFrame, out_dir: str, settings_o
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Plot partial adversary figures")
-    p.add_argument("--out_dir", default="results/synthetic_partial_adversary")
+    p.add_argument(
+        "--data_dir",
+        "--data-dir",
+        dest="data_dir",
+        default=DEFAULT_DATA_DIR,
+        help="Directory containing partial_adversary_shared.csv",
+    )
+    p.add_argument(
+        "--plot_dir",
+        "--plot-dir",
+        dest="plot_dir",
+        default=DEFAULT_PLOT_DIR,
+        help="Directory to save plots",
+    )
+    p.add_argument("--out_dir", dest="data_dir", help="Alias for --data_dir")
     args = p.parse_args()
-    table = pd.read_csv(os.path.join(args.out_dir, "partial_adversary_shared.csv"))
+    table = pd.read_csv(os.path.join(args.data_dir, "partial_adversary_shared.csv"))
     settings_order = list(dict.fromkeys(table["setting"].tolist()))
-    plot_partial_adversary_figures(table, args.out_dir, settings_order)
-    print(f"OUT partial adversary plots: {args.out_dir}")
+    plot_partial_adversary_figures(table, plot_dir=args.plot_dir, settings_order=settings_order)
+    print(f"OUT partial adversary plots: {args.plot_dir}")
 
 
 if __name__ == "__main__":

@@ -98,7 +98,7 @@ def run_T_sweep_data(
 
 def main() -> None:
     p = argparse.ArgumentParser(description="T sweep with lr_theta ∝ 1/T (data only)")
-    p.add_argument("--out_root", default="results/synthetic_T_sweep_lr_scaled")
+    p.add_argument("--data_dir", "--out_root", dest="data_dir", default="exp_synthesis/synthetic_T_sweep_lr_scaled", help="Directory to save CSV data")
     p.add_argument("--seeds", type=int, default=120)
     p.add_argument("--steps", type=int, default=400)
     p.add_argument(
@@ -117,7 +117,7 @@ def main() -> None:
     args = p.parse_args()
 
     run_T_sweep_data(
-        args.out_root,
+        args.data_dir,
         seeds=args.seeds,
         steps=args.steps,
         Ts=args.Ts,

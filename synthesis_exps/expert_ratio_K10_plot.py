@@ -84,8 +84,12 @@ def _row_spec() -> List[Tuple[str, str, str, float, float, bool, str]]:
     ]
 
 
+DEFAULT_DATA_DIR = "exp_synthesis/synthetic_expert_ratio_sweep_K10"
+DEFAULT_PLOT_DIR = "result/synthetic_expert_ratio_sweep_K10"
+
+
 def plot_heatmaps(
-    out_dir: str,
+    plot_dir: str,
     k: int,
     grids: Dict[str, Dict[str, np.ndarray]],
 ) -> None:
@@ -135,7 +139,7 @@ def plot_heatmaps(
         cbar = fig.colorbar(im, cax=cax)
         cbar.set_label(cbar_label, fontsize=9)
 
-    combined = os.path.join(out_dir, "expert_ratio_sweep.png")
+    combined = os.path.join(plot_dir, "expert_ratio_sweep.png")
     savefig_png_pdf(fig, combined, dpi=220, bbox_inches="tight", facecolor="white")
     plt.close(fig)
 
@@ -179,7 +183,7 @@ def plot_heatmaps(
         cb = f.colorbar(im, cax=cax)
         cb.set_label(cbar_label, fontsize=9)
         savefig_png_pdf(
-            f, os.path.join(out_dir, fname), dpi=220, bbox_inches="tight", facecolor="white"
+            f, os.path.join(plot_dir, fname), dpi=220, bbox_inches="tight", facecolor="white"
         )
         plt.close(f)
 
@@ -214,8 +218,11 @@ def grids_from_table(table: pd.DataFrame, k: int) -> Dict[str, Dict[str, np.ndar
     return grids
 
 
-def replot_from_csv(out_dir: str) -> None:
-    table = pd.read_csv(os.path.join(out_dir, "expert_ratio_shared.csv"))
+def replot_from_csv(
+    data_dir: str = DEFAULT_DATA_DIR,
+    plot_dir: str = DEFAULT_PLOT_DIR,
+) -> None:
+    table = pd.read_csv(os.path.join(data_dir, "expert_ratio_shared.csv"))
     required = {"mean_noisy_trust", "mean_rel_trust"}
     missing = required - set(table.columns)
     if missing:
@@ -224,15 +231,29 @@ def replot_from_csv(out_dir: str) -> None:
         )
     k = int((table["n_R"] + table["n_N"] + table["n_A"]).iloc[0])
     grids = grids_from_table(table, k)
-    plot_heatmaps(out_dir, k, grids)
-    print(f"replot OK: {out_dir}")
+    plot_heatmaps(plot_dir, k, grids)
+    print(f"replot OK: {plot_dir}")
 
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Plot expert-ratio K=10 heatmaps")
-    p.add_argument("--out_dir", default="results/synthetic_expert_ratio_sweep_K10")
+    p.add_argument(
+        "--data_dir",
+        "--data-dir",
+        dest="data_dir",
+        default=DEFAULT_DATA_DIR,
+        help="Directory containing expert_ratio_shared.csv",
+    )
+    p.add_argument(
+        "--plot_dir",
+        "--plot-dir",
+        dest="plot_dir",
+        default=DEFAULT_PLOT_DIR,
+        help="Directory to save plots",
+    )
+    p.add_argument("--out_dir", dest="data_dir", help="Alias for --data_dir")
     args = p.parse_args()
-    replot_from_csv(args.out_dir)
+    replot_from_csv(data_dir=args.data_dir, plot_dir=args.plot_dir)
 
 
 if __name__ == "__main__":

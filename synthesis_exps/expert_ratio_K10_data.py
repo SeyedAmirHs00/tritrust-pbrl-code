@@ -83,7 +83,7 @@ def run_expert_ratio_data(
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--out_dir", default="results/synthetic_expert_ratio_sweep_K10")
+    p.add_argument("--data_dir", "--out_dir", dest="data_dir", default="exp_synthesis/synthetic_expert_ratio_sweep_K10", help="Directory to save CSV data")
     p.add_argument("--n_experts", type=int, default=10)
     p.add_argument("--seeds", type=int, default=100)
     p.add_argument("--steps", type=int, default=400)
@@ -97,7 +97,7 @@ def main() -> None:
     args = p.parse_args()
 
     run_expert_ratio_data(
-        args.out_dir,
+        args.data_dir,
         n_experts=args.n_experts,
         seeds=args.seeds,
         steps=args.steps,

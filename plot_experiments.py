@@ -743,10 +743,10 @@ def plot_cross_env_curves(
 REWARD_XLABEL = "Reward step"
 
 # Larger typography for alpha / logit-coef style figures (readable in paper grids).
-ALPHA_LABELSIZE = 16
-ALPHA_TICKSIZE = 14
-ALPHA_LEGENDSIZE = 12
-ALPHA_OFFSETSIZE = 13
+ALPHA_LABELSIZE = 26
+ALPHA_TICKSIZE = 22
+ALPHA_LEGENDSIZE = 20
+ALPHA_OFFSETSIZE = 22
 
 CHANNEL_SYMBOL = {
     "expert_logits_coef": r"\bar{\alpha}",

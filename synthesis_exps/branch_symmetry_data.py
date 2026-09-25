@@ -122,7 +122,7 @@ def run_branch_data(out_dir: str, seeds: int, steps: int, overwrite: bool, *, co
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Branch-symmetry data")
-    p.add_argument("--out_dir", default="results/synthetic_branch_symmetry")
+    p.add_argument("--data_dir", "--out_dir", dest="data_dir", default="exp_synthesis/synthetic_branch_symmetry", help="Directory to save CSV data")
     p.add_argument("--seeds", type=int, default=200)
     p.add_argument("--steps", type=int, default=400)
     p.add_argument("--overwrite", action="store_true")
@@ -135,7 +135,7 @@ def main() -> None:
     )
     args = p.parse_args()
 
-    run_branch_data(args.out_dir, args.seeds, args.steps, args.overwrite, coef_max_delta=args.coef_max_delta)
+    run_branch_data(args.data_dir, args.seeds, args.steps, args.overwrite, coef_max_delta=args.coef_max_delta)
 
 
 if __name__ == "__main__":

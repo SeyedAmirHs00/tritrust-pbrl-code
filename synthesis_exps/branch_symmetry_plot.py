@@ -17,8 +17,15 @@ from plot_utils import savefig_png_pdf
 from synthetic_shared_core import build_k4_configs
 
 
-def plot_branch_bars(out: str) -> None:
-    stats = pd.read_csv(os.path.join(out, "alpha_bar_stats.csv"))
+DEFAULT_DATA_DIR = "exp_synthesis/synthetic_branch_symmetry"
+DEFAULT_PLOT_DIR = "result/synthetic_branch_symmetry"
+
+
+def plot_branch_bars(
+    data_dir: str = DEFAULT_DATA_DIR,
+    plot_dir: str = DEFAULT_PLOT_DIR,
+) -> None:
+    stats = pd.read_csv(os.path.join(data_dir, "alpha_bar_stats.csv"))
     configs = build_k4_configs()
     order = ["3R1N", "3R1A", "1R3A"]
     colors = {"standard": "#4c72b0", "stabilized": "#dd8452"}
@@ -60,7 +67,10 @@ def plot_branch_bars(out: str) -> None:
         ax.grid(True, axis="y", ls=":", alpha=0.4)
         fig.tight_layout()
         savefig_png_pdf(
-            fig, os.path.join(out, f"alpha_bar_{cfg}.png"), dpi=200, bbox_inches="tight"
+            fig,
+            os.path.join(plot_dir, f"alpha_bar_{cfg}.png"),
+            dpi=200,
+            bbox_inches="tight",
         )
         plt.close(fig)
 
@@ -68,13 +78,23 @@ def plot_branch_bars(out: str) -> None:
 def main() -> None:
     p = argparse.ArgumentParser(description="Plot branch-symmetry bars from CSV")
     p.add_argument(
-        "--out_dir",
-        default="results/synthetic_branch_symmetry",
+        "--data_dir",
+        "--data-dir",
+        dest="data_dir",
+        default=DEFAULT_DATA_DIR,
         help="Directory containing alpha_bar_stats.csv",
     )
+    p.add_argument(
+        "--plot_dir",
+        "--plot-dir",
+        dest="plot_dir",
+        default=DEFAULT_PLOT_DIR,
+        help="Directory to save plots",
+    )
+    p.add_argument("--out_dir", dest="data_dir", help="Alias for --data_dir")
     args = p.parse_args()
-    plot_branch_bars(args.out_dir)
-    print(f"OUT branch plots: {args.out_dir}")
+    plot_branch_bars(data_dir=args.data_dir, plot_dir=args.plot_dir)
+    print(f"OUT branch plots: {args.plot_dir}")
 
 
 if __name__ == "__main__":

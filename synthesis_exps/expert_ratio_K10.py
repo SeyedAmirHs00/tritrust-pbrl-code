@@ -17,7 +17,9 @@ from synthetic_shared_core import DEFAULT_COEF_MAX_DELTA
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--out_dir", default="results/synthetic_expert_ratio_sweep_K10")
+    p.add_argument("--data_dir", default="exp_synthesis/synthetic_expert_ratio_sweep_K10", help="Directory for CSV data")
+    p.add_argument("--plot_dir", default="result/synthetic_expert_ratio_sweep_K10", help="Directory for plots")
+    p.add_argument("--out_dir", dest="data_dir", help="Alias for --data_dir")
     p.add_argument("--n_experts", type=int, default=10)
     p.add_argument("--seeds", type=int, default=100)
     p.add_argument("--steps", type=int, default=400)
@@ -32,19 +34,19 @@ def main() -> None:
     args = p.parse_args()
 
     if args.replot:
-        replot_from_csv(args.out_dir)
+        replot_from_csv(data_dir=args.data_dir, plot_dir=args.plot_dir)
         return
 
     run_expert_ratio_data(
-        args.out_dir,
+        args.data_dir,
         n_experts=args.n_experts,
         seeds=args.seeds,
         steps=args.steps,
         overwrite=args.overwrite,
         coef_max_delta=args.coef_max_delta,
     )
-    replot_from_csv(args.out_dir)
-    print(f"OUT: {args.out_dir}")
+    replot_from_csv(data_dir=args.data_dir, plot_dir=args.plot_dir)
+    print(f"OUT: data={args.data_dir}, plot={args.plot_dir}")
 
 
 if __name__ == "__main__":

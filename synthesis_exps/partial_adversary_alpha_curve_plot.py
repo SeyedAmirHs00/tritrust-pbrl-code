@@ -291,33 +291,33 @@ def plot_per_experiment(
 
 def write_alpha_curve_figures(
     hist: pd.DataFrame,
-    out_dir: str,
+    plot_dir: str,
     *,
     ci: str = "std",
     per_experiment: bool = True,
     per_seed: bool = False,
 ) -> None:
-    """Write aggregated mean±band grids (+ optional per-experiment, per-seed) into ``out_dir``."""
-    os.makedirs(out_dir, exist_ok=True)
+    """Write aggregated mean±band grids (+ optional per-experiment, per-seed) into ``plot_dir``."""
+    os.makedirs(plot_dir, exist_ok=True)
     plot_curves(
         hist,
-        os.path.join(out_dir, "alpha_curve_tilde_grid.png"),
+        os.path.join(plot_dir, "alpha_curve_tilde_grid.png"),
         "tilde_alpha",
         r"$\tilde\alpha=\tanh(\alpha)$",
         ci=ci,
     )
     plot_curves(
         hist,
-        os.path.join(out_dir, "alpha_curve_abar_grid.png"),
+        os.path.join(plot_dir, "alpha_curve_abar_grid.png"),
         "abar_alpha",
         r"$\bar\alpha$",
         ci=ci,
     )
     if per_experiment:
-        plot_per_experiment(hist, out_dir, ci=ci)
+        plot_per_experiment(hist, plot_dir, ci=ci)
     if per_seed:
-        plot_per_seed(hist, out_dir, "tilde_alpha", "tilde")
-        plot_per_seed(hist, out_dir, "abar_alpha", "abar")
+        plot_per_seed(hist, plot_dir, "tilde_alpha", "tilde")
+        plot_per_seed(hist, plot_dir, "abar_alpha", "abar")
 
 
 def parse_args() -> argparse.Namespace:
@@ -326,22 +326,26 @@ def parse_args() -> argparse.Namespace:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument(
+        "--data_dir",
         "--run_dir",
+        dest="data_dir",
         type=str,
-        default=None,
-        help=f"Directory containing {HIST_CSV_NAME} (also used as --out_dir if unset).",
+        default="exp_synthesis/synthetic_partial_adversary_alpha_curve",
+        help=f"Directory containing {HIST_CSV_NAME}.",
     )
     p.add_argument(
         "--csv",
         type=str,
         default=None,
-        help="Path to alpha_learning_curve_per_step.csv (overrides --run_dir).",
+        help="Path to alpha_learning_curve_per_step.csv (overrides --data_dir).",
     )
     p.add_argument(
+        "--plot_dir",
         "--out_dir",
+        dest="plot_dir",
         type=str,
         default=None,
-        help="Where to write figures (default: --run_dir or CSV parent).",
+        help="Where to write figures (default: result/<experiment_name> derived from data_dir/csv).",
     )
     p.add_argument(
         "--ci",
@@ -378,20 +382,17 @@ def main() -> int:
     args = parse_args()
     if args.csv:
         csv_path = args.csv
-    elif args.run_dir:
-        csv_path = os.path.join(args.run_dir, HIST_CSV_NAME)
+        default_plot_dir = os.path.join("result", os.path.basename(os.path.dirname(os.path.abspath(csv_path))))
+    elif args.data_dir:
+        csv_path = os.path.join(args.data_dir, HIST_CSV_NAME)
+        default_plot_dir = os.path.join("result", os.path.basename(os.path.normpath(args.data_dir)))
     else:
-        raise SystemExit("Provide --run_dir or --csv")
+        raise SystemExit("Provide --data_dir or --csv")
 
     if not os.path.isfile(csv_path):
         raise SystemExit(f"CSV not found: {csv_path}")
 
-    if args.out_dir:
-        out_dir = args.out_dir
-    elif args.run_dir:
-        out_dir = args.run_dir
-    else:
-        out_dir = os.path.dirname(os.path.abspath(csv_path)) or "."
+    plot_dir = args.plot_dir or default_plot_dir
 
     hist = pd.read_csv(csv_path)
     required = {
@@ -409,17 +410,17 @@ def main() -> int:
 
     n_seeds = int(hist["seed_idx"].nunique())
     print(
-        f"Plotting from {csv_path} → {out_dir}  "
+        f"Plotting from {csv_path} → {plot_dir}  "
         f"(n_seeds={n_seeds}, ci={args.ci}, per_experiment={args.per_experiment}, per_seed={args.per_seed})"
     )
     write_alpha_curve_figures(
         hist,
-        out_dir,
+        plot_dir,
         ci=args.ci,
         per_experiment=args.per_experiment,
         per_seed=args.per_seed and not args.no_per_seed,
     )
-    print(f"OUT: {out_dir}")
+    print(f"OUT: {plot_dir}")
     return 0
 
 

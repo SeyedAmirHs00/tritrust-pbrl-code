@@ -21,7 +21,9 @@ from synthetic_shared_core import DEFAULT_COEF_MAX_DELTA
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Branch-symmetry (fig:synthetic-branch)")
-    p.add_argument("--out_dir", default="results/synthetic_branch_symmetry")
+    p.add_argument("--data_dir", default="exp_synthesis/synthetic_branch_symmetry", help="Directory for CSV data")
+    p.add_argument("--plot_dir", default="result/synthetic_branch_symmetry", help="Directory for plots")
+    p.add_argument("--out_dir", dest="data_dir", help="Alias for --data_dir")
     p.add_argument("--seeds", type=int, default=200)
     p.add_argument("--steps", type=int, default=400)
     p.add_argument("--overwrite", action="store_true")
@@ -35,14 +37,15 @@ def main() -> None:
     args = p.parse_args()
 
     if args.replot:
-        plot_branch_bars(args.out_dir)
-        print(f"replot OK: {args.out_dir}")
+        plot_branch_bars(data_dir=args.data_dir, plot_dir=args.plot_dir)
+        print(f"replot OK: {args.plot_dir}")
         return
 
     out = run_branch_data(
-        args.out_dir, args.seeds, args.steps, args.overwrite, coef_max_delta=args.coef_max_delta
+        args.data_dir, args.seeds, args.steps, args.overwrite, coef_max_delta=args.coef_max_delta
     )
-    plot_branch_bars(out)
+    plot_branch_bars(data_dir=out, plot_dir=args.plot_dir)
+    print(f"OUT: data={args.data_dir}, plot={args.plot_dir}")
 
 
 if __name__ == "__main__":

@@ -15,7 +15,13 @@ from plot_utils import savefig_png_pdf
 from synthetic_shared_core import SHARED_BRANCH_VARIANTS
 
 
-def plot_T_figure(df: pd.DataFrame, out_root: str, Ts) -> None:
+DEFAULT_DATA_DIR = "exp_synthesis/synthetic_T_sweep_lr_scaled"
+DEFAULT_PLOT_DIR = "result/synthetic_T_sweep_lr_scaled"
+
+
+def plot_T_figure(df: pd.DataFrame, plot_dir: str = DEFAULT_PLOT_DIR, Ts=None) -> None:
+    if Ts is None:
+        Ts = sorted(df["T"].unique().tolist())
     colors = {"standard": "#4c72b0", "stabilized": "#dd8452"}
     markers = {"standard": "o", "stabilized": "s"}
     order = ["3R1N", "3R1A", "1R3A"]
@@ -46,7 +52,10 @@ def plot_T_figure(df: pd.DataFrame, out_root: str, Ts) -> None:
     axes[-1].legend(loc="best", fontsize=9)
     fig.tight_layout()
     savefig_png_pdf(
-        fig, os.path.join(out_root, "T_sweep_lr_scaled.png"), dpi=200, bbox_inches="tight"
+        fig,
+        os.path.join(plot_dir, "T_sweep_lr_scaled.png"),
+        dpi=200,
+        bbox_inches="tight",
     )
     plt.close(fig)
 
@@ -76,7 +85,7 @@ def plot_T_figure(df: pd.DataFrame, out_root: str, Ts) -> None:
         fig.tight_layout()
         savefig_png_pdf(
             fig,
-            os.path.join(out_root, f"T_sweep_lr_scaled_{letter}_{cfg}.png"),
+            os.path.join(plot_dir, f"T_sweep_lr_scaled_{letter}_{cfg}.png"),
             dpi=200,
             bbox_inches="tight",
         )
@@ -85,12 +94,25 @@ def plot_T_figure(df: pd.DataFrame, out_root: str, Ts) -> None:
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Plot T sweep lr-scaled figures")
-    p.add_argument("--out_root", default="results/synthetic_T_sweep_lr_scaled")
+    p.add_argument(
+        "--data_dir",
+        "--out_root",
+        dest="data_dir",
+        default=DEFAULT_DATA_DIR,
+        help="Directory containing T_sweep_lr_scaled.csv",
+    )
+    p.add_argument(
+        "--plot_dir",
+        "--plot_root",
+        dest="plot_dir",
+        default=DEFAULT_PLOT_DIR,
+        help="Directory to save plots",
+    )
     args = p.parse_args()
-    df = pd.read_csv(os.path.join(args.out_root, "T_sweep_lr_scaled.csv"))
+    df = pd.read_csv(os.path.join(args.data_dir, "T_sweep_lr_scaled.csv"))
     Ts = sorted(df["T"].unique().tolist())
-    plot_T_figure(df, args.out_root, Ts)
-    print(f"OUT T sweep plots: {args.out_root}")
+    plot_T_figure(df, plot_dir=args.plot_dir, Ts=Ts)
+    print(f"OUT T sweep plots: {args.plot_dir}")
 
 
 if __name__ == "__main__":
