@@ -85,7 +85,7 @@ def _row_spec() -> List[Tuple[str, str, str, float, float, bool, str]]:
 
 
 DEFAULT_DATA_DIR = "exp_synthesis/synthetic_expert_ratio_sweep_K10"
-DEFAULT_PLOT_DIR = "result/synthetic_expert_ratio_sweep_K10"
+DEFAULT_PLOT_DIR = "results/synthetic_expert_ratio_sweep_K10"
 
 
 def plot_heatmaps(

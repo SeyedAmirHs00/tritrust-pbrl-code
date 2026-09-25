@@ -345,7 +345,7 @@ def parse_args() -> argparse.Namespace:
         dest="plot_dir",
         type=str,
         default=None,
-        help="Where to write figures (default: result/<experiment_name> derived from data_dir/csv).",
+        help="Where to write figures (default: results/<experiment_name> derived from data_dir/csv).",
     )
     p.add_argument(
         "--ci",
@@ -382,10 +382,10 @@ def main() -> int:
     args = parse_args()
     if args.csv:
         csv_path = args.csv
-        default_plot_dir = os.path.join("result", os.path.basename(os.path.dirname(os.path.abspath(csv_path))))
+        default_plot_dir = os.path.join("results", os.path.basename(os.path.dirname(os.path.abspath(csv_path))))
     elif args.data_dir:
         csv_path = os.path.join(args.data_dir, HIST_CSV_NAME)
-        default_plot_dir = os.path.join("result", os.path.basename(os.path.normpath(args.data_dir)))
+        default_plot_dir = os.path.join("results", os.path.basename(os.path.normpath(args.data_dir)))
     else:
         raise SystemExit("Provide --data_dir or --csv")
 

@@ -36,7 +36,7 @@ def _default_plot_dir(*, use_wk: bool, optimizer: str, reward_model: str) -> str
     suffix_wk = "_wk" if use_wk else ""
     suffix_opt = "" if optimizer == "sgd" else f"_{optimizer}"
     suffix_model = "_mlp" if reward_model == "mlp" else ""
-    return f"result/synthetic_partial_adversary_alpha_curve{suffix_wk}{suffix_opt}{suffix_model}"
+    return f"results/synthetic_partial_adversary_alpha_curve{suffix_wk}{suffix_opt}{suffix_model}"
 
 
 def main() -> None:

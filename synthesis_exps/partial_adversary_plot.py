@@ -16,7 +16,7 @@ from plot_utils import savefig_png_pdf
 
 
 DEFAULT_DATA_DIR = "exp_synthesis/synthetic_partial_adversary"
-DEFAULT_PLOT_DIR = "result/synthetic_partial_adversary"
+DEFAULT_PLOT_DIR = "results/synthetic_partial_adversary"
 
 
 def plot_partial_adversary_figures(

@@ -16,7 +16,7 @@ from synthetic_shared_core import SHARED_BRANCH_VARIANTS
 
 
 DEFAULT_DATA_DIR = "exp_synthesis/synthetic_T_sweep_lr_scaled"
-DEFAULT_PLOT_DIR = "result/synthetic_T_sweep_lr_scaled"
+DEFAULT_PLOT_DIR = "results/synthetic_T_sweep_lr_scaled"
 
 
 def plot_T_figure(df: pd.DataFrame, plot_dir: str = DEFAULT_PLOT_DIR, Ts=None) -> None:

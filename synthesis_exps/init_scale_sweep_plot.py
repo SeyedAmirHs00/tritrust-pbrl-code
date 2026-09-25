@@ -16,7 +16,7 @@ from plot_utils import savefig_png_pdf
 
 
 DEFAULT_DATA_DIR = "exp_synthesis/synthetic_init_scale_sweep"
-DEFAULT_PLOT_DIR = "result/synthetic_init_scale_sweep"
+DEFAULT_PLOT_DIR = "results/synthetic_init_scale_sweep"
 
 
 def plot_init_scale_figure(table: pd.DataFrame, plot_dir: str = DEFAULT_PLOT_DIR) -> None:

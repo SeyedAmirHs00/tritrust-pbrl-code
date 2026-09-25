@@ -23,7 +23,7 @@ from synthetic_shared_core import DEFAULT_COEF_MAX_DELTA
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--data_dir", default="exp_synthesis/synthetic_partial_adversary", help="Directory for CSV data")
-    p.add_argument("--plot_dir", default="result/synthetic_partial_adversary", help="Directory for plots")
+    p.add_argument("--plot_dir", default="results/synthetic_partial_adversary", help="Directory for plots")
     p.add_argument("--out_dir", dest="data_dir", help="Alias for --data_dir")
     p.add_argument("--seeds", type=int, default=200)
     p.add_argument("--steps", type=int, default=400)

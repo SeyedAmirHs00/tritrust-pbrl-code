@@ -851,7 +851,7 @@ def parse_args() -> argparse.Namespace:
         "--plot_dir",
         default=None,
         help="Directory for plot outputs with --plot "
-        "(default: result/synthetic_partial_adversary_alpha_curve[_wk][_opt][_mlp]).",
+        "(default: results/synthetic_partial_adversary_alpha_curve[_wk][_opt][_mlp]).",
     )
     p.add_argument("--seeds", type=int, default=200, help="Number of MC seeds (batch size).")
     p.add_argument("--steps", type=int, default=400)
@@ -959,7 +959,7 @@ def main() -> int:
         )
     if args.plot_dir is None:
         args.plot_dir = (
-            f"result/synthetic_partial_adversary_alpha_curve{suffix_wk}{suffix_opt}{suffix_model}"
+            f"results/synthetic_partial_adversary_alpha_curve{suffix_wk}{suffix_opt}{suffix_model}"
         )
 
     if os.path.exists(args.data_dir):

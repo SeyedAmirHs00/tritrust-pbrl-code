@@ -16,7 +16,7 @@ from plot_utils import savefig_png_pdf
 
 
 DEFAULT_DATA_DIR = "exp_synthesis/synthetic_overlap_sweep"
-DEFAULT_PLOT_DIR = "result/synthetic_overlap_sweep"
+DEFAULT_PLOT_DIR = "results/synthetic_overlap_sweep"
 
 
 def plot_overlap_figure(

@@ -18,7 +18,7 @@ from synthetic_shared_core import build_k4_configs
 
 
 DEFAULT_DATA_DIR = "exp_synthesis/synthetic_branch_symmetry"
-DEFAULT_PLOT_DIR = "result/synthetic_branch_symmetry"
+DEFAULT_PLOT_DIR = "results/synthetic_branch_symmetry"
 
 
 def plot_branch_bars(
