@@ -132,11 +132,11 @@ def plot_curves(
             if mi == 0 and si == 0:
                 ax.legend(fontsize=7, loc="best")
 
-    fig.suptitle(
-        f"Seed-aggregated α curves ({_ci_legend_suffix(ci)}, n={n_seeds})",
-        y=1.02,
-        fontsize=11,
-    )
+    # fig.suptitle(
+    #     f"Seed-aggregated α curves ({_ci_legend_suffix(ci)}, n={n_seeds})",
+    #     y=1.02,
+    #     fontsize=11,
+    # )
     fig.tight_layout()
     savefig_png_pdf(fig, out_path, dpi=200, bbox_inches="tight")
     plt.close(fig)
@@ -166,7 +166,7 @@ def plot_per_seed(
         ax.axhline(0, color="gray", ls=":", lw=0.8)
         ax.set_xlabel("step")
         ax.set_ylabel(tag)
-        ax.set_title(f"{sname} / {mname} / seed_idx={sid}")
+        # ax.set_title(f"{sname} / {mname} / seed_idx={sid}")
         ax.legend(fontsize=8)
         ax.grid(True, ls=":", alpha=0.4)
         fig.tight_layout()
@@ -237,10 +237,10 @@ def plot_per_experiment(
         ax2.set_title(r"Max-Normalized Trust $\bar\alpha$", fontsize=10)
         ax2.legend(fontsize=8, loc="best")
 
-        fig.suptitle(
-            f"{sname} ({mname}) — α curves ({_ci_legend_suffix(ci)}, n={n_seeds})",
-            fontsize=11,
-        )
+        # fig.suptitle(
+        #     f"{sname} ({mname}) — α curves ({_ci_legend_suffix(ci)}, n={n_seeds})",
+        #     fontsize=11,
+        # )
         fig.tight_layout()
         fname_combo = f"alpha_curve_{sname}_{mname}.png".replace("/", "_")
         out_path_combo = os.path.join(out_dir, fname_combo)
@@ -276,10 +276,10 @@ def plot_per_experiment(
             ax_s.grid(True, ls=":", alpha=0.35)
             ax_s.set_xlabel("step")
             ax_s.set_ylabel(ylabel)
-            ax_s.set_title(
-                f"{sname} ({mname}) — {ylabel} ({_ci_legend_suffix(ci)}, n={n_seeds})",
-                fontsize=10,
-            )
+            # ax_s.set_title(
+            #     f"{sname} ({mname}) — {ylabel} ({_ci_legend_suffix(ci)}, n={n_seeds})",
+            #     fontsize=10,
+            # )
             ax_s.legend(fontsize=8, loc="best")
             fig_s.tight_layout()
             fname_s = f"alpha_curve_{tag}_{sname}_{mname}.png".replace("/", "_")
