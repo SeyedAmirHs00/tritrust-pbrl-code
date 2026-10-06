@@ -1,10 +1,14 @@
 """Generate Overlap counterfactual CSV with DS-Sym initialized at q=1, s=1, theta=0.
 
-Side-by-side comparison of TTP, No-alpha, and DS-Sym (init q=1, s=1, theta=0)
-across shared-pair fraction q in [0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0].
+Supports custom expert rationality mixtures, defaulting to 2R2N1A:
+  betas = [1.0, 1.0, 0.0, 0.0, -1.0]
+    - 2 Reliable experts (beta = 1.0)
+    - 2 Noisy / random experts (beta = 0.0)
+    - 1 Adversarial expert (beta = -1.0)
 
 Example:
   python overlap_ds_init_sweep_data.py --seeds 120 --overwrite
+  python overlap_ds_init_sweep_data.py --betas 1 1 0 0 -1 --seeds 120 --overwrite
 """
 
 from __future__ import annotations
@@ -13,7 +17,7 @@ import argparse
 import os
 import shutil
 import time
-from typing import Optional, Tuple
+from typing import Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -27,6 +31,8 @@ from synthetic_shared_core import (
     rowwise_corr,
     sigmoid_np,
 )
+
+DEFAULT_BETAS = (1.0, 1.0, 0.0, 0.0, -1.0)
 
 
 def _returns(states: torch.Tensor, theta: torch.Tensor) -> torch.Tensor:
@@ -47,7 +53,7 @@ def train_ttp(
     coef_max_delta: Optional[float] = DEFAULT_COEF_MAX_DELTA,
 ) -> Tuple[np.ndarray, np.ndarray]:
     seeds, n_total, T, d = states.shape
-    k, m = y.shape[1], y.shape[2]
+    k = y.shape[1]
     theta = torch.nn.Parameter(torch.zeros(seeds, d, device=states.device))
     if fix_alpha:
         alpha_param = None
@@ -124,8 +130,8 @@ def train_ds_sym(
     q is parameterized directly in [0, 1] and clamped after each SGD step.
     """
     seeds, _, _, d = states.shape
-    k, m = y.shape[1], y.shape[2]
-    # theta initialized to zero vector
+    k = y.shape[1]
+    # theta initialized to 0
     theta = torch.nn.Parameter(torch.zeros(seeds, d, device=states.device))
     # scale parameter initialized to s_init (default 1.0)
     s = torch.nn.Parameter(torch.full((seeds,), s_init, device=states.device))
@@ -155,7 +161,7 @@ def train_ds_sym(
                 gn = theta.grad.norm(dim=1, keepdim=True).clamp_min(1e-12)
                 theta.grad.mul_(torch.clamp(10.0 / gn, max=1.0))
         opt.step()
-        # Direct projection/clamping of reliability q in [0, 1]
+        # Direct projection of reliability q into [0, 1]
         with torch.no_grad():
             q.data.clamp_(0.0, 1.0)
 
@@ -173,6 +179,7 @@ def run_overlap_data(
     steps: int,
     overwrite: bool,
     *,
+    betas: Sequence[float] = DEFAULT_BETAS,
     coef_max_delta: float = DEFAULT_COEF_MAX_DELTA,
     q_init: float = 1.0,
     s_init: float = 1.0,
@@ -184,8 +191,18 @@ def run_overlap_data(
         shutil.rmtree(out_dir)
     os.makedirs(out_dir)
 
-    k, n_total, T, d, m = 4, 500, 50, 16, 256
+    betas_np = np.asarray(betas, dtype=float)
+    k = len(betas_np)
+    n_total, T, d, m = 500, 50, 16, 256
     bs = n_total // k
+
+    # Expert masks according to rationality
+    rel_mask = betas_np == 1.0
+    noisy_mask = betas_np == 0.0
+    adv_mask = betas_np == -1.0
+    n_r, n_n, n_a = int(rel_mask.sum()), int(noisy_mask.sum()), int(adv_mask.sum())
+    setting_name = f"{n_r}R{n_n}N{n_a}A"
+
     qs = [0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0]
     methods = ("ttp", "no_alpha", "ds_sym")
     rows = []
@@ -194,6 +211,7 @@ def run_overlap_data(
     t0 = time.perf_counter()
     print(
         f"[overlap_ds_init] device={device} seeds={seeds} steps={steps} "
+        f"setting={setting_name} betas={betas_np.tolist()} k={k} "
         f"qs={qs} methods={list(methods)} jobs={n_jobs} "
         f"q_init={q_init} s_init={s_init} theta_init=0 "
         f"coef_max_delta={coef_max_delta} out_dir={out_dir}",
@@ -241,13 +259,12 @@ def run_overlap_data(
             i_all_np[:, e, n_shared:] = i_p
             j_all_np[:, e, n_shared:] = j_p
 
-        betas = np.array([1.0, 1.0, 1.0, -1.0])
         y_np = np.zeros((seeds, k, m))
         for e in range(k):
             dstar = np.take_along_axis(r_star, i_all_np[:, e], 1) - np.take_along_axis(
                 r_star, j_all_np[:, e], 1
             )
-            y_np[:, e] = (rng.random((seeds, m)) < sigmoid_np(betas[e] * dstar)).astype(float)
+            y_np[:, e] = (rng.random((seeds, m)) < sigmoid_np(betas_np[e] * dstar)).astype(float)
 
         states = torch.as_tensor(states_np, dtype=torch.float32, device=device)
         i_all = torch.as_tensor(i_all_np, dtype=torch.long, device=device)
@@ -261,18 +278,17 @@ def run_overlap_data(
                 flush=True,
             )
             t_job = time.perf_counter()
+            abar: Optional[np.ndarray] = None
+            q_final: Optional[np.ndarray] = None
+
             if method == "ttp":
                 R, abar = train_ttp(
                     states, i_all, j_all, y, steps=steps, fix_alpha=False, coef_max_delta=coef_max_delta
                 )
-                aA = float(abar[:, -1].mean())
-                qA = float("nan")
             elif method == "no_alpha":
                 R, abar = train_ttp(
                     states, i_all, j_all, y, steps=steps, fix_alpha=True, coef_max_delta=coef_max_delta
                 )
-                aA = float("nan")
-                qA = float("nan")
             else:
                 R, q_final = train_ds_sym(
                     states,
@@ -284,41 +300,98 @@ def run_overlap_data(
                     q_init=q_init,
                     s_init=s_init,
                 )
-                aA = float("nan")
-                qA = float(q_final[:, -1].mean())
 
+            # Alignment metrics
             rho = rowwise_corr(R, r_star)
             glob = np.abs(rho)
             locals_ = [np.abs(rowwise_corr(R[:, blk], r_star[:, blk])) for blk in blocks]
             loc = np.mean(np.stack(locals_, 0), 0)
+
+            # Group trust values (for TTP abar in [-1, 1])
+            if abar is not None:
+                mean_trust_rel = float(abar[:, rel_mask].mean()) if n_r > 0 else float("nan")
+                mean_trust_noisy = float(abar[:, noisy_mask].mean()) if n_n > 0 else float("nan")
+                mean_trust_adv = float(abar[:, adv_mask].mean()) if n_a > 0 else float("nan")
+            else:
+                mean_trust_rel = float("nan")
+                mean_trust_noisy = float("nan")
+                mean_trust_adv = float("nan")
+
+            # Group reliability values (for DS-Sym q in [0, 1])
+            if q_final is not None:
+                mean_rel_rel = float(q_final[:, rel_mask].mean()) if n_r > 0 else float("nan")
+                mean_rel_noisy = float(q_final[:, noisy_mask].mean()) if n_n > 0 else float("nan")
+                mean_rel_adv = float(q_final[:, adv_mask].mean()) if n_a > 0 else float("nan")
+            else:
+                mean_rel_rel = float("nan")
+                mean_rel_noisy = float("nan")
+                mean_rel_adv = float("nan")
+
             row = {
-                "q": q,
+                # Setup metadata
+                "overlap_ratio_q": q,
                 "method": method,
-                "global_med": float(np.mean(glob)),
-                "global_q25": float(np.percentile(glob, 25)),
-                "global_q75": float(np.percentile(glob, 75)),
-                "signed_med": float(np.mean(rho)),
-                "signed_q25": float(np.percentile(rho, 25)),
-                "signed_q75": float(np.percentile(rho, 75)),
-                "local_med": float(np.mean(loc)),
-                "correct": float((rho > 0.5).mean()),
-                "mean_abar_A": aA,
-                "mean_q_A": qA,
+                "setting": setting_name,
+                "betas": str(betas_np.tolist()),
+                # Primary correlation metrics
+                "signed_corr_median": float(np.mean(rho)),
+                "signed_corr_q25": float(np.percentile(rho, 25)),
+                "signed_corr_q75": float(np.percentile(rho, 75)),
+                "abs_corr_median": float(np.mean(glob)),
+                "abs_corr_q25": float(np.percentile(glob, 25)),
+                "abs_corr_q75": float(np.percentile(glob, 75)),
+                "local_corr_median": float(np.mean(loc)),
+                "correct_branch_rate": float((rho > 0.5).mean()),
+                # TTP Trust parameters (abar in [-1, 1])
+                "mean_trust_reliable": mean_trust_rel,
+                "mean_trust_noisy": mean_trust_noisy,
+                "mean_trust_adversary": mean_trust_adv,
+                # DS-Sym Reliability parameters (q in [0, 1])
+                "mean_reliability_reliable": mean_rel_rel,
+                "mean_reliability_noisy": mean_rel_noisy,
+                "mean_reliability_adversary": mean_rel_adv,
             }
+
+            # Individual per-expert trust and reliability
+            for e_idx in range(k):
+                b_val = betas_np[e_idx]
+                tag = "R" if b_val > 0 else ("N" if b_val == 0 else "A")
+                row[f"trust_e{e_idx}_{tag}"] = (
+                    float(abar[:, e_idx].mean()) if abar is not None else float("nan")
+                )
+                row[f"rel_e{e_idx}_{tag}"] = (
+                    float(q_final[:, e_idx].mean()) if q_final is not None else float("nan")
+                )
+
+            # Compatibility aliases for legacy tools/plots
+            row["q"] = q
+            row["signed_med"] = row["signed_corr_median"]
+            row["signed_q25"] = row["signed_corr_q25"]
+            row["signed_q75"] = row["signed_corr_q75"]
+            row["global_med"] = row["abs_corr_median"]
+            row["global_q25"] = row["abs_corr_q25"]
+            row["global_q75"] = row["abs_corr_q75"]
+            row["local_med"] = row["local_corr_median"]
+            row["correct"] = row["correct_branch_rate"]
+            row["mean_abar_A"] = mean_trust_adv
+            row["mean_q_A"] = mean_rel_adv
+
             rows.append(row)
             dt = time.perf_counter() - t_job
             elapsed = time.perf_counter() - t0
             print(
                 f"[overlap_ds_init] [{job}/{n_jobs}] q={q:<4g} {method:8s} "
-                f"|rho|_med={row['global_med']:.3f} rho_med={row['signed_med']:+.3f} "
-                f"correct={row['correct']:.3f}  ({dt:.1f}s job, {elapsed:.1f}s total)",
+                f"corr_med={row['signed_corr_median']:+.3f} "
+                f"correct={row['correct_branch_rate']:.3f} "
+                f"trust[R={mean_trust_rel:+.2f},N={mean_trust_noisy:+.2f},A={mean_trust_adv:+.2f}] "
+                f"rel[R={mean_rel_rel:.2f},N={mean_rel_noisy:.2f},A={mean_rel_adv:.2f}] "
+                f"({dt:.1f}s job, {elapsed:.1f}s total)",
                 flush=True,
             )
 
     table = pd.DataFrame(rows)
     csv_path = os.path.join(out_dir, "overlap_shared.csv")
     table.to_csv(csv_path, index=False)
-    # Also save with specific name for clarity
     table.to_csv(os.path.join(out_dir, "overlap_ds_init_shared.csv"), index=False)
     elapsed = time.perf_counter() - t0
     print(f"[overlap_ds_init] done in {elapsed:.1f}s → {out_dir}", flush=True)
@@ -327,8 +400,17 @@ def run_overlap_data(
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Overlap sweep with DS-Sym init q=1, s=1, theta=0")
+    p = argparse.ArgumentParser(
+        description="Overlap sweep with DS-Sym init q=1, s=1, theta=0 and custom betas"
+    )
     p.add_argument("--out_dir", default="results/synthetic_overlap_ds_init_sweep")
+    p.add_argument(
+        "--betas",
+        type=float,
+        nargs="+",
+        default=list(DEFAULT_BETAS),
+        help="Teacher rationality mixture (default: 1.0 1.0 0.0 0.0 -1.0 for 2R2N1A).",
+    )
     p.add_argument("--seeds", type=int, default=120)
     p.add_argument("--steps", type=int, default=400)
     p.add_argument("--overwrite", action="store_true")
@@ -348,6 +430,7 @@ def main() -> None:
         args.seeds,
         args.steps,
         args.overwrite,
+        betas=tuple(args.betas),
         coef_max_delta=args.coef_max_delta,
         q_init=args.q_init,
         s_init=args.s_init,
