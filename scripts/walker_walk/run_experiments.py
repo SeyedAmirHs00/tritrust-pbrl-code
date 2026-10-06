@@ -56,10 +56,12 @@ MIXTURE_BETA_SETS: Sequence[Sequence[int]] = (
 
 ENTRYPOINTS = {
     "mixture": "train_PEBBLE_mixture.py",
+    "dawid_sym": "train_PEBBLE_dawid_sym.py",
 }
 
 LOG_ROOTS = {
     "mixture": "exp_pebble_mixture",
+    "dawid_sym": "exp_pebble_dawid_sym",
 }
 
 

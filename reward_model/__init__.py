@@ -1,2 +1,3 @@
 from .vanilla_reward_model import RewardModel
 from .vanilla_reward_model_mixup import RewardModelMixup
+from .dawid_sym_reward_model import DawidSymRewardModel

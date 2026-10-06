@@ -1,0 +1,23 @@
+defaults:
+    - base_mixture
+    - agent: sac
+
+# Experiment name
+experiment: PEBBLE_dawid_sym
+
+# Stabilized init: zero last Linear before first preference reward update
+zero_last_layer: true
+
+# SGD learning rates
+reward_lr: 0.001
+expert_lr: 0.005
+alpha_lr: 0.005
+
+# Initial trainable Dawid-Sym parameters
+q_init: 1.0
+s_init: 1.0
+
+# Hydra run directory
+hydra:
+    run:
+        dir: ./exp_pebble_dawid_sym/${env}/max_feedback${max_feedback}_feed_type${feed_type}_n${reward_batch}_l${segment}_g${teacher_gamma}_b${teacher_betas}_m${teacher_eps_mistake}_s${teacher_eps_skip}_e${teacher_eps_equal}/seed${seed}_${now:%Y-%m-%d_%H-%M-%S}/
