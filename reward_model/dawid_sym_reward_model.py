@@ -160,15 +160,15 @@ class DawidSymRewardModel(_BaseMixtureRewardModel):
 
                 seg1 = seg1.to(device)
                 seg2 = seg2.to(device)
-                labels = labels.to(device)
-                expert_inds = expert_inds.to(device)
+                labels = labels.to(device).view(-1)
+                expert_inds = expert_inds.to(device).view(-1)
 
                 # Predict segment returns for ensemble member m
                 r1 = self.ensemble[m](torch.cat((seg1,), dim=1)).sum(dim=1)  # [B, 1]
                 r2 = self.ensemble[m](torch.cat((seg2,), dim=1)).sum(dim=1)  # [B, 1]
 
                 # Latent return difference: delta = r2 - r1 (label 1 corresponds to seg2 ≻ seg1)
-                delta = r2 - r1  # [B, 1]
+                delta = (r2 - r1).view(-1, 1)  # [B, 1]
 
                 # Latent true preference probability under scale s:
                 # P(z = 1) = sigmoid(s * (r2 - r1)), P(z = 0) = 1 - P(z = 1)
@@ -176,7 +176,7 @@ class DawidSymRewardModel(_BaseMixtureRewardModel):
                 p_z0 = 1.0 - p_z1
 
                 # Gather reliability q_e for each query's expert
-                q_batch = self.q[expert_inds].unsqueeze(1)  # [B, 1]
+                q_batch = self.q[expert_inds].view(-1, 1)  # [B, 1]
 
                 # Marginalized label probabilities:
                 # P(y = 1) = q_e * P(z = 1) + (1 - q_e) * P(z = 0)
