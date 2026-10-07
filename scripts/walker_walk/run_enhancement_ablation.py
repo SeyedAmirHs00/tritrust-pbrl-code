@@ -9,6 +9,7 @@ Mirrors Table ``enhancement-ablation`` in ``main_v2.tex`` (Section
   --------
   Raw                 : no tanh, no max-norm, no confidence weight w_k
   +Tanh               : tanh only
+  +Max-norm           : max-norm only
   +Tanh,+Max-norm     : tanh + max-norm  (same as w/o w_k)
   Full TTP            : tanh + max-norm + w_k
   w_k reward-only     : tanh + max-norm + w_k in reward CE (detached from alpha)
@@ -44,6 +45,7 @@ class AblationVariant:
 ABLATION_VARIANTS: Sequence[AblationVariant] = (
     AblationVariant("raw", False, False, False, True, note="no enhancements"),
     AblationVariant("tanh", True, False, False, True, note="+Tanh"),
+    AblationVariant("maxn", False, True, False, True, note="+Max-norm"),
     AblationVariant("tanh_maxn", True, True, False, True, note="+Tanh,+Max-norm / w/o w_k"),
     AblationVariant("full_ttp", True, True, True, False, note="Full TTP (detached w_k)"),
     AblationVariant(

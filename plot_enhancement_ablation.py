@@ -19,6 +19,10 @@ Examples
   python plot_enhancement_ablation.py --env metaworld_sweep-into-v2 --teacher-betas 1 1 1 0
   python plot_enhancement_ablation.py --env metaworld_sweep-into-v2 --max-feedback 40000
 
+  # Enhancement ablation plus a Dawid-Skene baseline
+  python plot_enhancement_ablation.py --env walker_walk --max-feedback 3000 \
+      --teacher-betas 1 1 0 0 -1 --dawid-root exp_pebble_dawid_sym
+
   # Buffer / RMS-ΔR diagnostics (single env)
   python plot_enhancement_ablation.py --mode diagnostics --env walker_walk --seeds 12345
 
@@ -127,22 +131,33 @@ class VariantMeta:
     use_max_norm: bool
     use_confidence_weight: bool
     use_confidence_weight_in_alpha: bool = True
+    is_baseline: bool = False
+    marker: str = "o"
+    hatch: str = ""
 
 
 # Colour-blind friendly palette; Full TTP highlighted.
 # Key: (tanh, max_norm, w_k, w_k_in_alpha)
 VARIANT_META: Dict[Tuple[bool, bool, bool, bool], VariantMeta] = {
     (False, False, False, True): VariantMeta(
-        "tFalse_mFalse_wFalse_waTrue", "Raw", "Raw", "#7A7A7A", "--", 0, False, False, False, True
+        "tFalse_mFalse_wFalse_waTrue", "Raw", "Raw", "#7A7A7A", "--", 0,
+        False, False, False, True, marker="o", hatch="//"
     ),
     (True, False, False, True): VariantMeta(
-        "tTrue_mFalse_wFalse_waTrue", "+Tanh", "+Tanh", "#4C78A8", "-", 1, True, False, False, True
+        "tTrue_mFalse_wFalse_waTrue", "+Tanh", "+Tanh", "#4C78A8", "-", 1,
+        True, False, False, True, marker="s", hatch="\\\\"
+    ),
+    (False, True, False, True): VariantMeta(
+        "tFalse_mTrue_wFalse_waTrue", "+Max-norm", "+Max", "#54A24B", "-", 2,
+        False, True, False, True, marker="^", hatch="xx"
     ),
     (True, True, False, True): VariantMeta(
-        "tTrue_mTrue_wFalse_waTrue", "+Tanh, +Max-norm", "+Tanh+Max", "#F58518", "-", 2, True, True, False, True
+        "tTrue_mTrue_wFalse_waTrue", "+Tanh, +Max-norm", "+Tanh+Max", "#F58518", "-", 3,
+        True, True, False, True, marker="D", hatch="--"
     ),
     (True, True, True, False): VariantMeta(
-        "tTrue_mTrue_wTrue_waFalse", "Full TTP", "Full TTP", "#E45756", "-", 3, True, True, True, False
+        "tTrue_mTrue_wTrue_waFalse", "Full TTP", "Full TTP", "#E45756", "-", 4,
+        True, True, True, False, marker="*", hatch=""
     ),
     (True, True, True, True): VariantMeta(
         "tTrue_mTrue_wTrue_waTrue",
@@ -150,19 +165,39 @@ VARIANT_META: Dict[Tuple[bool, bool, bool, bool], VariantMeta] = {
         "Att w_k",
         "#FF9DA6",
         ":",
-        4,
+        5,
         True,
         True,
         True,
         True,
+        marker="P",
+        hatch="++",
     ),
     (True, False, True, True): VariantMeta(
-        "tTrue_mFalse_wTrue_waTrue", "w/o Max-norm", "w/o Max", "#54A24B", "-.", 4, True, False, True, True
+        "tTrue_mFalse_wTrue_waTrue", "w/o Max-norm", "w/o Max", "#72B7B2", "-.", 6,
+        True, False, True, True, marker="v", hatch="oo"
     ),
     (False, True, True, True): VariantMeta(
-        "tFalse_mTrue_wTrue_waTrue", "w/o Tanh", "w/o Tanh", "#B279A2", "-.", 5, False, True, True, True
+        "tFalse_mTrue_wTrue_waTrue", "w/o Tanh", "w/o Tanh", "#B279A2", "-.", 7,
+        False, True, True, True, marker="X", hatch=".."
     ),
 }
+
+DAWID_SKENE_META = VariantMeta(
+    key="dawid_sym",
+    label="Dawid-Skene",
+    short="Dawid-Skene",
+    color="#222222",
+    linestyle="--",
+    order=100,
+    use_tanh=False,
+    use_max_norm=False,
+    use_confidence_weight=False,
+    use_confidence_weight_in_alpha=False,
+    is_baseline=True,
+    marker="h",
+    hatch="**",
+)
 
 
 def parse_variant_folder(name: str) -> Optional[VariantMeta]:
@@ -836,7 +871,18 @@ def plot_learning_curves(
     fig, ax = plt.subplots(figsize=(8.0, 5.0))
     for meta in sorted(curves.keys(), key=lambda m: m.order):
         x, mean, band = curves[meta]
-        ax.plot(x, mean, color=meta.color, linestyle=meta.linestyle, label=meta.label)
+        ax.plot(
+            x,
+            mean,
+            color=meta.color,
+            linestyle=meta.linestyle,
+            marker=meta.marker,
+            markevery=max(1, len(x) // 10),
+            markersize=6,
+            markeredgecolor="white",
+            markeredgewidth=0.7,
+            label=meta.label,
+        )
         ax.fill_between(
             x, mean - band, mean + band, color=meta.color, alpha=0.18, linewidth=0
         )
@@ -885,8 +931,9 @@ def plot_final_bars(
         alpha=0.9,
         error_kw={"elinewidth": 1.2, "capthick": 1.2},
     )
-    # Mark Full TTP.
+    # Make every method distinguishable in grayscale as well as by color.
     for i, m in enumerate(metas):
+        bars[i].set_hatch(m.hatch)
         if m.short == "Full TTP":
             bars[i].set_linewidth(1.8)
 
@@ -961,7 +1008,18 @@ def plot_alpha_abs_sum(
     fig, ax = plt.subplots(figsize=(8.0, 5.0))
     for meta in sorted(abs_sum_curves.keys(), key=lambda m: m.order):
         x, mean, band = abs_sum_curves[meta]
-        ax.plot(x, mean, color=meta.color, linestyle=meta.linestyle, label=meta.label)
+        ax.plot(
+            x,
+            mean,
+            color=meta.color,
+            linestyle=meta.linestyle,
+            marker=meta.marker,
+            markevery=max(1, len(x) // 10),
+            markersize=6,
+            markeredgecolor="white",
+            markeredgewidth=0.7,
+            label=meta.label,
+        )
         ax.fill_between(
             x, mean - band, mean + band, color=meta.color, alpha=0.18, linewidth=0
         )
@@ -1125,6 +1183,8 @@ def matched_w_pairs(
     """Pairs that share tanh/max-norm and differ only in confidence weight w_k."""
     by_backbone: Dict[Tuple[bool, bool], Dict[bool, VariantMeta]] = {}
     for m in metas:
+        if m.is_baseline:
+            continue
         key = (m.use_tanh, m.use_max_norm)
         slot = by_backbone.setdefault(key, {})
         if m.use_confidence_weight:
@@ -1172,7 +1232,18 @@ def plot_w_comparison(
             (wi, color_w, "-", "with w_k"),
         ):
             x, mean, band = curves[meta]
-            ax.plot(x, mean, color=color, linestyle=ls, label=f"{tag} ({meta.label})")
+            ax.plot(
+                x,
+                mean,
+                color=color,
+                linestyle=ls,
+                marker=meta.marker,
+                markevery=max(1, len(x) // 10),
+                markersize=6,
+                markeredgecolor="white",
+                markeredgewidth=0.7,
+                label=f"{tag} ({meta.label})",
+            )
             ax.fill_between(
                 x, mean - band, mean + band, color=color, alpha=0.18, linewidth=0
             )
@@ -1355,10 +1426,12 @@ def build_summary_table(
         rows.append(
             {
                 "variant": meta.label,
-                "tanh": meta.use_tanh,
-                "max_norm": meta.use_max_norm,
-                "w_k": meta.use_confidence_weight,
-                "w_k_in_alpha": meta.use_confidence_weight_in_alpha,
+                "tanh": None if meta.is_baseline else meta.use_tanh,
+                "max_norm": None if meta.is_baseline else meta.use_max_norm,
+                "w_k": None if meta.is_baseline else meta.use_confidence_weight,
+                "w_k_in_alpha": (
+                    None if meta.is_baseline else meta.use_confidence_weight_in_alpha
+                ),
                 "n_seeds": len(seed_finals),
                 "final_mean": float(np.mean(seed_finals)),
                 "final_std": float(np.std(seed_finals, ddof=1))
@@ -1387,6 +1460,15 @@ def parse_args() -> argparse.Namespace:
         help="Experiment layout: ablation variants, buffer diagnostics, or auto from --root",
     )
     p.add_argument("--root", default="exp_pebble_mixture_ablation")
+    p.add_argument(
+        "--dawid-root",
+        default=None,
+        help=(
+            "Ablation only: optional Dawid-Skene experiment root to add to the "
+            "learning curve, final bar chart, and summary (for example, "
+            "exp_pebble_dawid_sym)"
+        ),
+    )
     p.add_argument("--env", default="walker_walk", help="Environment folder name (ablation or diagnostics)")
     p.add_argument(
         "--envs",
@@ -1532,13 +1614,16 @@ def plot_one_feedback_budget(
                 n = min(last_n, Y.shape[1])
                 seed_scores = np.nanmean(Y[:, -n:], axis=1)
                 finals[meta] = seed_scores
+                final_std = (
+                    float(seed_scores.std(ddof=1)) if seed_scores.size > 1 else 0.0
+                )
                 print(
                     f"  [{meta.label:18s}] seeds={Y.shape[0]}  "
                     f"last-{n} mean={seed_scores.mean():.1f} ± "
-                    f"{seed_scores.std(ddof=1):.1f}"
+                    f"{final_std:.1f}"
                 )
 
-        if not skip_reward:
+        if not skip_reward and not meta.is_baseline:
             reward_files = find_csv_files(
                 vdir, "reward", max_feedback=max_feedback, teacher_betas=teacher_betas
             )
@@ -1883,8 +1968,18 @@ def main_ablation(args: argparse.Namespace) -> int:
         print(f"No ablation_* folders under {env_dir}")
         return 1
 
+    n_ablation_variants = len(variants)
+    if args.dawid_root:
+        dawid_env_dir = os.path.join(repo, args.dawid_root, args.env)
+        if not os.path.isdir(dawid_env_dir):
+            print(f"Dawid-Skene environment directory not found: {dawid_env_dir}")
+            return 1
+        variants.append((DAWID_SKENE_META, dawid_env_dir))
+
     available = discover_feedback_budgets(variants, teacher_betas=args.teacher_betas)
-    print(f"Found {len(variants)} ablation variants in {env_dir}")
+    print(f"Found {n_ablation_variants} ablation variants in {env_dir}")
+    if args.dawid_root:
+        print(f"Dawid-Skene baseline : {dawid_env_dir}")
     if args.teacher_betas is not None:
         print(f"teacher_betas filter : {format_teacher_betas_tag(args.teacher_betas)}")
     else:
